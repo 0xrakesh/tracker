@@ -72,7 +72,7 @@ export default function SignupPage() {
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     required
-                    className="border-2 border-retro-dark bg-white"
+                    className="border-2 border-retro-dark text-black bg-white"
                   />
                 </div>
                 <div className="space-y-2">
@@ -86,7 +86,7 @@ export default function SignupPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="border-2 border-retro-dark bg-white"
+                    className="border-2 border-retro-dark text-black bg-white"
                   />
                 </div>
                 <div className="space-y-2">
@@ -100,7 +100,7 @@ export default function SignupPage() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
-                    className="border-2 border-retro-dark bg-white"
+                    className="border-2 border-retro-dark text-black bg-white"
                   />
                 </div>
                 <Button
