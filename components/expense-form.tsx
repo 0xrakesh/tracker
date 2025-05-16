@@ -74,15 +74,11 @@ export function ExpenseForm({ onSubmit }: ExpenseFormProps) {
           name="amount"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-retro-label font-bold">AMOUNT</FormLabel>
+              <FormLabel className="text-retro-dark font-bold">AMOUNT</FormLabel>
               <FormControl>
-                <Input
-                  placeholder="0.00"
-                  {...field}
-                  className="border-2 border-retro-border bg-retro-input-bg shadow-retro"
-                />
+                <Input placeholder="0.00" {...field} className="border-2 border-retro-dark bg-white shadow-retro" />
               </FormControl>
-              <FormDescription className="text-retro-text">Enter the expense amount</FormDescription>
+              <FormDescription className="text-retro-dark">Enter the expense amount</FormDescription>
               <FormMessage className="text-red-500" />
             </FormItem>
           )}
@@ -93,10 +89,10 @@ export function ExpenseForm({ onSubmit }: ExpenseFormProps) {
           name="category"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-retro-label font-bold">CATEGORY</FormLabel>
+              <FormLabel className="text-retro-dark font-bold">CATEGORY</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
-                  <SelectTrigger className="border-2 border-retro-border bg-retro-input-bg shadow-retro">
+                  <SelectTrigger className="border-2 border-retro-dark bg-white shadow-retro">
                     <SelectValue placeholder="Select a category" />
                   </SelectTrigger>
                 </FormControl>
@@ -108,7 +104,7 @@ export function ExpenseForm({ onSubmit }: ExpenseFormProps) {
                   ))}
                 </SelectContent>
               </Select>
-              <FormDescription className="text-retro-text">Select the expense category</FormDescription>
+              <FormDescription className="text-retro-dark">Select the expense category</FormDescription>
               <FormMessage className="text-red-500" />
             </FormItem>
           )}
@@ -119,15 +115,15 @@ export function ExpenseForm({ onSubmit }: ExpenseFormProps) {
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-retro-label font-bold">DESCRIPTION</FormLabel>
+              <FormLabel className="text-retro-dark font-bold">DESCRIPTION</FormLabel>
               <FormControl>
                 <Textarea
                   placeholder="Describe your expense"
                   {...field}
-                  className="border-2 border-retro-border bg-retro-input-bg shadow-retro"
+                  className="border-2 border-retro-dark bg-white shadow-retro"
                 />
               </FormControl>
-              <FormDescription className="text-retro-text">Provide details about the expense</FormDescription>
+              <FormDescription className="text-retro-dark">Provide details about the expense</FormDescription>
               <FormMessage className="text-red-500" />
             </FormItem>
           )}
@@ -138,14 +134,14 @@ export function ExpenseForm({ onSubmit }: ExpenseFormProps) {
           name="date"
           render={({ field }) => (
             <FormItem className="flex flex-col">
-              <FormLabel className="text-retro-label font-bold">DATE</FormLabel>
+              <FormLabel className="text-retro-dark font-bold">DATE</FormLabel>
               <Popover>
                 <PopoverTrigger asChild>
                   <FormControl>
                     <Button
                       variant="outline"
                       className={cn(
-                        "w-full pl-3 text-left font-normal border-2 border-retro-border bg-retro-input-bg shadow-retro",
+                        "w-full pl-3 text-left font-normal border-2 border-retro-dark bg-white shadow-retro",
                         !field.value && "text-muted-foreground",
                       )}
                     >
@@ -158,7 +154,7 @@ export function ExpenseForm({ onSubmit }: ExpenseFormProps) {
                   <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
                 </PopoverContent>
               </Popover>
-              <FormDescription className="text-retro-text">The date of the expense</FormDescription>
+              <FormDescription className="text-retro-dark">The date of the expense</FormDescription>
               <FormMessage className="text-red-500" />
             </FormItem>
           )}
@@ -167,7 +163,7 @@ export function ExpenseForm({ onSubmit }: ExpenseFormProps) {
         <Button
           type="submit"
           disabled={isSubmitting}
-          className="w-full bg-retro-button hover:bg-retro-button-hover text-retro-button-text border-2 border-retro-border shadow-retro"
+          className="w-full bg-retro-medium hover:bg-retro-deep text-white border-2 border-retro-dark shadow-retro"
         >
           {isSubmitting ? "ADDING..." : "ADD EXPENSE"}
         </Button>

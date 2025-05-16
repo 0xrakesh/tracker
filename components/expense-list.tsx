@@ -43,12 +43,12 @@ export function ExpenseList({ expenses, onDelete }: ExpenseListProps) {
             placeholder="Search expenses..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="border-2 border-retro-border bg-retro-input-bg shadow-retro"
+            className="border-2 border-retro-dark bg-white shadow-retro"
           />
         </div>
         <div className="w-full md:w-48">
           <Select value={filter} onValueChange={setFilter}>
-            <SelectTrigger className="border-2 border-retro-border bg-retro-input-bg shadow-retro">
+            <SelectTrigger className="border-2 border-retro-dark bg-white shadow-retro">
               <SelectValue placeholder="Filter by category" />
             </SelectTrigger>
             <SelectContent>
@@ -64,29 +64,31 @@ export function ExpenseList({ expenses, onDelete }: ExpenseListProps) {
       </div>
 
       {filteredExpenses.length === 0 ? (
-        <div className="text-center py-8 text-retro-text border-2 border-retro-border bg-retro-card p-4 rounded shadow-retro">
+        <div className="text-center py-8 text-retro-dark border-2 border-retro-dark bg-white p-4 rounded shadow-retro">
           No expenses found.
         </div>
       ) : (
-        <div className="border-2 border-retro-border bg-retro-card rounded shadow-retro overflow-hidden">
+        <div className="border-2 border-retro-dark bg-white rounded shadow-retro overflow-hidden">
           <div className="overflow-x-auto">
             <Table>
-              <TableHeader className="bg-retro-header text-retro-header-text">
+              <TableHeader className="bg-retro-deep text-white">
                 <TableRow>
-                  <TableHead className="text-retro-header-text">DATE</TableHead>
-                  <TableHead className="text-retro-header-text">DESCRIPTION</TableHead>
-                  <TableHead className="text-retro-header-text">CATEGORY</TableHead>
-                  <TableHead className="text-right text-retro-header-text">AMOUNT</TableHead>
-                  <TableHead className="w-[80px] text-retro-header-text"></TableHead>
+                  <TableHead className="text-white">DATE</TableHead>
+                  <TableHead className="text-white">DESCRIPTION</TableHead>
+                  <TableHead className="text-white">CATEGORY</TableHead>
+                  <TableHead className="text-right text-white">AMOUNT</TableHead>
+                  <TableHead className="w-[80px] text-white"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredExpenses.map((expense) => (
-                  <TableRow key={expense._id?.toString()} className="hover:bg-retro-bg/30">
+                  <TableRow key={expense._id?.toString()} className="hover:bg-retro-light/30">
                     <TableCell className="font-medium">{format(new Date(expense.date), "MMM d, yyyy")}</TableCell>
                     <TableCell>{expense.description}</TableCell>
                     <TableCell>{expense.category}</TableCell>
-                    <TableCell className="text-right font-bold">${expense.amount.toFixed(2)}</TableCell>
+                    <TableCell className="text-right font-bold text-retro-medium">
+                      ${expense.amount.toFixed(2)}
+                    </TableCell>
                     <TableCell>
                       <Button
                         variant="ghost"
@@ -104,8 +106,8 @@ export function ExpenseList({ expenses, onDelete }: ExpenseListProps) {
               </TableBody>
             </Table>
           </div>
-          <div className="p-4 border-t-2 border-retro-border bg-retro-card">
-            <div className="text-sm text-retro-text">
+          <div className="p-4 border-t-2 border-retro-dark bg-white">
+            <div className="text-sm text-retro-dark">
               Showing {filteredExpenses.length} of {expenses.length} expenses
             </div>
           </div>

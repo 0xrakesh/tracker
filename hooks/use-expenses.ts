@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import type { Expense } from "@/lib/models/expense"
 
-export function useExpenses() {
+export function useExpenses(startDate?: Date, endDate?: Date) {
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -13,7 +13,22 @@ export function useExpenses() {
     setError(null)
 
     try {
-      const response = await fetch("/api/expenses")
+      let url = "/api/expenses"
+      const params = new URLSearchParams()
+
+      if (startDate) {
+        params.append("startDate", startDate.toISOString())
+      }
+
+      if (endDate) {
+        params.append("endDate", endDate.toISOString())
+      }
+
+      if (params.toString()) {
+        url += `?${params.toString()}`
+      }
+
+      const response = await fetch(url)
 
       if (!response.ok) {
         throw new Error("Failed to fetch expenses")
@@ -70,7 +85,7 @@ export function useExpenses() {
 
   useEffect(() => {
     fetchExpenses()
-  }, [])
+  }, [startDate, endDate])
 
   return {
     expenses,

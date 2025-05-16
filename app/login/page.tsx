@@ -40,16 +40,14 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-retro-bg p-4">
+    <div className="min-h-screen flex items-center justify-center bg-retro-light p-4">
       <div className="w-full max-w-md">
-        <Card className="border-4 border-retro-border shadow-retro">
-          <CardHeader className="bg-retro-header text-retro-header-text">
+        <Card className="border-4 border-retro-dark shadow-retro">
+          <CardHeader className="bg-retro-deep text-white">
             <CardTitle className="text-center text-2xl font-bold">FINANCE TRACKER</CardTitle>
-            <CardDescription className="text-center text-retro-header-text opacity-80">
-              Login to your account
-            </CardDescription>
+            <CardDescription className="text-center text-white opacity-80">Login to your account</CardDescription>
           </CardHeader>
-          <CardContent className="pt-6">
+          <CardContent className="pt-6 bg-white">
             {error && (
               <Alert variant="destructive" className="mb-4">
                 <AlertDescription>{error}</AlertDescription>
@@ -58,7 +56,7 @@ export default function LoginPage() {
             <form onSubmit={handleSubmit}>
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="username" className="text-retro-label">
+                  <Label htmlFor="username" className="text-retro-dark">
                     Username
                   </Label>
                   <Input
@@ -67,11 +65,11 @@ export default function LoginPage() {
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     required
-                    className="border-2 border-retro-input bg-retro-input-bg"
+                    className="border-2 border-retro-dark bg-white"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="password" className="text-retro-label">
+                  <Label htmlFor="password" className="text-retro-dark">
                     Password
                   </Label>
                   <Input
@@ -81,23 +79,23 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="border-2 border-retro-input bg-retro-input-bg"
+                    className="border-2 border-retro-dark bg-white"
                   />
                 </div>
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-retro-button hover:bg-retro-button-hover text-retro-button-text"
+                  className="w-full bg-retro-medium hover:bg-retro-deep text-white border-2 border-retro-dark"
                 >
                   {isLoading ? "Logging in..." : "Login"}
                 </Button>
               </div>
             </form>
           </CardContent>
-          <CardFooter className="flex justify-center border-t-2 border-retro-border pt-4">
-            <p className="text-sm text-retro-text">
+          <CardFooter className="flex justify-center border-t-2 border-retro-dark pt-4 bg-white">
+            <p className="text-sm text-retro-dark">
               Don&apos;t have an account?{" "}
-              <Link href="/signup" className="text-retro-link hover:underline">
+              <Link href="/signup" className="text-retro-medium hover:underline">
                 Sign up
               </Link>
             </p>
