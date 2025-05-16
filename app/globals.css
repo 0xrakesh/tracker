@@ -1,0 +1,178 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 271 81% 31%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 271 81% 31%;
+
+    --radius: 0.5rem;
+
+    /* Retro theme colors */
+    --retro-bg: 195 83% 95%;
+    --retro-card: 0 0% 100%;
+    --retro-text: 240 10% 20%;
+    --retro-border: 240 60% 50%;
+    --retro-header: 240 60% 50%;
+    --retro-header-text: 0 0% 100%;
+    --retro-button: 330 80% 60%;
+    --retro-button-hover: 330 80% 50%;
+    --retro-button-text: 0 0% 100%;
+    --retro-input: 240 10% 80%;
+    --retro-input-bg: 0 0% 100%;
+    --retro-label: 240 10% 20%;
+    --retro-link: 195 100% 40%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+
+    /* Retro theme colors for dark mode */
+    --retro-bg: 240 20% 10%;
+    --retro-card: 240 20% 15%;
+    --retro-text: 240 10% 90%;
+    --retro-border: 270 60% 50%;
+    --retro-header: 270 60% 40%;
+    --retro-header-text: 0 0% 100%;
+    --retro-button: 330 80% 50%;
+    --retro-button-hover: 330 80% 40%;
+    --retro-button-text: 0 0% 100%;
+    --retro-input: 240 10% 30%;
+    --retro-input-bg: 240 10% 20%;
+    --retro-label: 240 10% 90%;
+    --retro-link: 195 100% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Retro styling */
+@layer components {
+  .shadow-retro {
+    box-shadow: 4px 4px 0px 0px hsl(var(--retro-border));
+  }
+
+  .bg-retro-bg {
+    background-color: hsl(var(--retro-bg));
+  }
+
+  .bg-retro-card {
+    background-color: hsl(var(--retro-card));
+  }
+
+  .text-retro-text {
+    color: hsl(var(--retro-text));
+  }
+
+  .border-retro-border {
+    border-color: hsl(var(--retro-border));
+  }
+
+  .bg-retro-header {
+    background-color: hsl(var(--retro-header));
+  }
+
+  .text-retro-header-text {
+    color: hsl(var(--retro-header-text));
+  }
+
+  .bg-retro-button {
+    background-color: hsl(var(--retro-button));
+  }
+
+  .hover\:bg-retro-button-hover:hover {
+    background-color: hsl(var(--retro-button-hover));
+  }
+
+  .text-retro-button-text {
+    color: hsl(var(--retro-button-text));
+  }
+
+  .border-retro-input {
+    border-color: hsl(var(--retro-input));
+  }
+
+  .bg-retro-input-bg {
+    background-color: hsl(var(--retro-input-bg));
+  }
+
+  .text-retro-label {
+    color: hsl(var(--retro-label));
+  }
+
+  .text-retro-link {
+    color: hsl(var(--retro-link));
+  }
+}
+
+/* Custom retro fonts */
+@font-face {
+  font-family: "VT323";
+  src: url("https://fonts.googleapis.com/css2?family=VT323&display=swap");
+  font-weight: normal;
+  font-style: normal;
+}
+
+.font-retro {
+  font-family: "VT323", monospace;
+  letter-spacing: 0.05em;
+}
