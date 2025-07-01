@@ -161,13 +161,13 @@ export function ExpenseInsights() {
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="min-w-0">
-          {" "}
-          {/* Added min-w-0 */}
           <CardHeader>
             <CardTitle>Spending Trend</CardTitle>
             <CardDescription>Last 6 months spending pattern</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="overflow-x-auto">
+            {" "}
+            {/* Added overflow-x-auto */}
             <ChartContainer
               config={{
                 amount: {
@@ -181,11 +181,10 @@ export function ExpenseInsights() {
                 <LineChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" />
-                  <YAxis tickFormatter={(value) => (showAmounts ? `₹${value}` : "₹**")} /> {/* Shortened placeholder */}
+                  <YAxis tickFormatter={(value) => (showAmounts ? `₹${value}` : "₹")} /> {/* Shortened placeholder */}
                   <ChartTooltip
                     content={<ChartTooltipContent />}
-                    /* Shortened placeholder when amounts are hidden */
-                    formatter={(value) => [showAmounts ? `₹${value}` : "₹**", "Amount"]}
+                    formatter={(value) => [showAmounts ? `₹${value}` : "₹", "Amount"]}
                   />
                   <Line
                     type="monotone"
@@ -201,13 +200,13 @@ export function ExpenseInsights() {
         </Card>
 
         <Card className="min-w-0">
-          {" "}
-          {/* Added min-w-0 */}
           <CardHeader>
             <CardTitle>Category Breakdown</CardTitle>
             <CardDescription>Top spending categories</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="overflow-x-auto">
+            {" "}
+            {/* Added overflow-x-auto */}
             <ChartContainer
               config={{
                 value: {
@@ -234,8 +233,7 @@ export function ExpenseInsights() {
                   </Pie>
                   <ChartTooltip
                     content={<ChartTooltipContent />}
-                    /* Shortened placeholder when amounts are hidden */
-                    formatter={(value) => [showAmounts ? `₹${value}` : "₹**", "Amount"]}
+                    formatter={(value) => [showAmounts ? `₹${value}` : "₹", "Amount"]}
                   />
                 </PieChart>
               </ResponsiveContainer>
