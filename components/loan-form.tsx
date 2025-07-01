@@ -13,16 +13,28 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from "@/components/ui/input"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { toast } from "@/components/ui/use-toast"
-import { calculateMonthlyPayment } from "@/lib/loan-calculations" // Updated import path
+import { calculateMonthlyPayment } from "@/lib/loan-calculations"
 
 const formSchema = z.object({
   loanName: z.string().min(1, "Loan name is required"),
   principalAmount: z
     .string()
-    .min(1, "Principal amount is required")
+    .min(1, "Original principal amount is required")
     .refine((val) => !isNaN(Number.parseFloat(val)) && Number.parseFloat(val) > 0, {
       message: "Amount must be a positive number",
     }),
+  initialOutstandingAmount: z // New field
+    .string()
+    .optional()
+    .refine(
+      (val) => {
+        if (val === undefined || val === "") return true // Optional and empty is fine
+        return !isNaN(Number.parseFloat(val)) && Number.parseFloat(val) >= 0
+      },
+      {
+        message: "Outstanding amount must be a non-negative number",
+      },
+    ),
   interestRate: z
     .string()
     .min(1, "Interest rate is required")
@@ -44,8 +56,9 @@ type FormValues = z.infer<typeof formSchema>
 
 interface LoanFormProps {
   onSubmit: (
-    values: Omit<FormValues, "principalAmount" | "interestRate" | "loanTermMonths"> & {
+    values: Omit<FormValues, "principalAmount" | "interestRate" | "loanTermMonths" | "initialOutstandingAmount"> & {
       principalAmount: number
+      initialOutstandingAmount?: number // Pass as number or undefined
       interestRate: number
       loanTermMonths: number
       monthlyPayment: number
@@ -62,6 +75,7 @@ export function LoanForm({ onSubmit }: LoanFormProps) {
     defaultValues: {
       loanName: "",
       principalAmount: "",
+      initialOutstandingAmount: "", // Initialize as empty string
       interestRate: "",
       loanTermMonths: "",
       startDate: new Date(),
@@ -93,12 +107,16 @@ export function LoanForm({ onSubmit }: LoanFormProps) {
       const principalAmount = Number.parseFloat(values.principalAmount)
       const interestRate = Number.parseFloat(values.interestRate)
       const loanTermMonths = Number.parseInt(values.loanTermMonths)
+      const initialOutstandingAmount = values.initialOutstandingAmount
+        ? Number.parseFloat(values.initialOutstandingAmount)
+        : undefined // Convert to number or undefined
 
       const calculatedMonthlyPayment = calculateMonthlyPayment(principalAmount, interestRate / 100, loanTermMonths)
 
       const success = await onSubmit({
         ...values,
         principalAmount,
+        initialOutstandingAmount, // Pass the new field
         interestRate,
         loanTermMonths,
         monthlyPayment: Number.parseFloat(calculatedMonthlyPayment.toFixed(2)),
@@ -139,11 +157,28 @@ export function LoanForm({ onSubmit }: LoanFormProps) {
           name="principalAmount"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Principal Amount (₹)</FormLabel>
+              <FormLabel>Original Principal Amount (₹)</FormLabel>
               <FormControl>
                 <Input placeholder="1000000" {...field} />
               </FormControl>
-              <FormDescription>The initial amount borrowed</FormDescription>
+              <FormDescription>The initial amount borrowed when the loan started</FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="initialOutstandingAmount"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Current Outstanding Amount (Optional, ₹)</FormLabel>
+              <FormControl>
+                <Input placeholder="e.g., 800000" {...field} />
+              </FormControl>
+              <FormDescription>
+                Enter the current balance if this is an existing loan you're adding. Leave blank if new.
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}

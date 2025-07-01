@@ -1,8 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
-import { addLoan, getLoans, calculateMonthlyPayment } from "@/lib/loans"
+import { addLoan, getLoans } from "@/lib/loans" // calculateMonthlyPayment is now re-exported from lib/loans
 import type { Loan } from "@/lib/models/loan"
 import clientPromise from "@/lib/mongodb"
+import { calculateMonthlyPayment } from "@/lib/loan-calculations" // Import directly for server-side calculation
 
 export async function GET(req: NextRequest) {
   try {
@@ -59,6 +60,9 @@ export async function POST(req: NextRequest) {
     }
 
     const principalAmount = Number.parseFloat(data.principalAmount)
+    const initialOutstandingAmount = data.initialOutstandingAmount
+      ? Number.parseFloat(data.initialOutstandingAmount)
+      : undefined // New: Parse optional outstanding amount
     const interestRate = Number.parseFloat(data.interestRate) / 100 // Convert percentage to decimal
     const loanTermMonths = Number.parseInt(data.loanTermMonths)
 
@@ -67,9 +71,13 @@ export async function POST(req: NextRequest) {
       principalAmount <= 0 ||
       isNaN(interestRate) ||
       isNaN(loanTermMonths) ||
-      loanTermMonths <= 0
+      loanTermMonths <= 0 ||
+      (initialOutstandingAmount !== undefined && isNaN(initialOutstandingAmount))
     ) {
-      return NextResponse.json({ error: "Invalid loan amount, interest rate, or term" }, { status: 400 })
+      return NextResponse.json(
+        { error: "Invalid loan amount, interest rate, term, or outstanding amount" },
+        { status: 400 },
+      )
     }
 
     const monthlyPayment = calculateMonthlyPayment(principalAmount, interestRate, loanTermMonths)
@@ -78,6 +86,7 @@ export async function POST(req: NextRequest) {
       userId: session.userId,
       loanName: data.loanName,
       principalAmount,
+      initialOutstandingAmount, // New: Store the initial outstanding amount
       interestRate: interestRate * 100, // Store as percentage
       loanTermMonths,
       startDate: new Date(data.startDate),

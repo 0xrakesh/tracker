@@ -5,6 +5,7 @@ export interface Loan {
   userId: string
   loanName: string
   principalAmount: number
+  initialOutstandingAmount?: number // New: Optional field for current balance when adding existing loan
   interestRate: number // Annual interest rate as a decimal (e.g., 0.05 for 5%)
   loanTermMonths: number // Loan term in months
   startDate: Date

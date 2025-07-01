@@ -40,7 +40,8 @@ export function useLoans() {
               ...loan,
               payments: [],
               totalPaid: 0,
-              currentPrincipalBalance: loan.principalAmount,
+              // Initialize currentPrincipalBalance from initialOutstandingAmount or principalAmount
+              currentPrincipalBalance: loan.initialOutstandingAmount ?? loan.principalAmount,
               totalInterestPaidActual: 0,
               nextDueDate: addMonths(new Date(loan.startDate), 1), // First payment due date
               nextPaymentAmount: loan.monthlyPayment,
@@ -52,7 +53,8 @@ export function useLoans() {
 
           const totalPaid = payments.reduce((sum, payment) => sum + payment.amount, 0)
 
-          let currentPrincipalBalance = loan.principalAmount
+          // Initialize currentPrincipalBalance based on initialOutstandingAmount or principalAmount
+          let currentPrincipalBalance = loan.initialOutstandingAmount ?? loan.principalAmount
           let totalInterestPaidActual = 0
           let nextDueDate: Date | null = null
           let nextPaymentAmount: number | null = null
