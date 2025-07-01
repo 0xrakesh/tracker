@@ -21,13 +21,15 @@ export function ExportButton({ onExport, disabled = false, size = "sm", variant 
     try {
       await onExport(format)
       toast({
-        title: "Export successful",
-        description: `Your data has been exported as ${format.toUpperCase()}.`,
+        title: "Export initiated",
+        description: "A new window will open with your report. Use your browser's print function to save as PDF.",
       })
     } catch (error) {
+      console.error("Export error:", error)
       toast({
         title: "Export failed",
-        description: "There was an error exporting your data. Please try again.",
+        description:
+          error instanceof Error ? error.message : "There was an error exporting your data. Please try again.",
         variant: "destructive",
       })
     } finally {

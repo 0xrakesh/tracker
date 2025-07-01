@@ -1,59 +1,113 @@
-import jsPDF from "jspdf"
-import "jspdf-autotable"
 import { format } from "date-fns"
 import type { Expense } from "./models/expense"
 import type { BudgetStatus } from "./models/budget"
 
-// Extend jsPDF type to include autoTable
-declare module "jspdf" {
-  interface jsPDF {
-    autoTable: (options: any) => jsPDF
+// Create a printable HTML document and convert to PDF
+function createPrintableDocument(content: string, title: string): void {
+  const printWindow = window.open("", "_blank")
+  if (!printWindow) {
+    throw new Error("Unable to open print window. Please check your popup blocker.")
   }
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>${title}</title>
+      <style>
+        body {
+          font-family: Arial, sans-serif;
+          margin: 20px;
+          color: #333;
+        }
+        .header {
+          text-align: center;
+          margin-bottom: 30px;
+          border-bottom: 2px solid #6366f1;
+          padding-bottom: 20px;
+        }
+        .header h1 {
+          color: #6366f1;
+          margin: 0;
+          font-size: 24px;
+        }
+        .header p {
+          margin: 5px 0;
+          color: #666;
+        }
+        .summary {
+          background: #f8fafc;
+          padding: 15px;
+          border-radius: 8px;
+          margin: 20px 0;
+        }
+        .summary h2 {
+          margin-top: 0;
+          color: #6366f1;
+        }
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          margin: 20px 0;
+        }
+        th, td {
+          border: 1px solid #e2e8f0;
+          padding: 8px 12px;
+          text-align: left;
+        }
+        th {
+          background: #6366f1;
+          color: white;
+          font-weight: bold;
+        }
+        tr:nth-child(even) {
+          background: #f8fafc;
+        }
+        .amount {
+          text-align: right;
+          font-weight: bold;
+        }
+        .status-over {
+          color: #dc2626;
+          font-weight: bold;
+        }
+        .status-ok {
+          color: #16a34a;
+          font-weight: bold;
+        }
+        .section {
+          margin: 30px 0;
+        }
+        .section h3 {
+          color: #374151;
+          border-bottom: 1px solid #e5e7eb;
+          padding-bottom: 5px;
+        }
+        @media print {
+          body { margin: 0; }
+          .no-print { display: none; }
+        }
+      </style>
+    </head>
+    <body>
+      ${content}
+      <div class="no-print" style="text-align: center; margin-top: 30px;">
+        <button onclick="window.print()" style="background: #6366f1; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-right: 10px;">Print/Save as PDF</button>
+        <button onclick="window.close()" style="background: #6b7280; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Close</button>
+      </div>
+    </body>
+    </html>
+  `
+
+  printWindow.document.write(html)
+  printWindow.document.close()
+
+  // Auto-focus the print window
+  printWindow.focus()
 }
 
 export function exportExpensesToPDF(expenses: Expense[], startDate: Date, endDate: Date, username: string) {
-  const doc = new jsPDF()
-
-  // Header
-  doc.setFontSize(20)
-  doc.text("Expense Report", 20, 20)
-
-  doc.setFontSize(12)
-  doc.text(`Generated for: ${username}`, 20, 35)
-  doc.text(`Period: ${format(startDate, "MMM dd, yyyy")} - ${format(endDate, "MMM dd, yyyy")}`, 20, 45)
-  doc.text(`Generated on: ${format(new Date(), "MMM dd, yyyy HH:mm")}`, 20, 55)
-
-  // Summary
   const totalAmount = expenses.reduce((sum, expense) => sum + expense.amount, 0)
-  doc.setFontSize(14)
-  doc.text(`Total Expenses: ₹${totalAmount.toFixed(2)}`, 20, 70)
-  doc.text(`Number of Transactions: ${expenses.length}`, 20, 80)
-
-  // Table data
-  const tableData = expenses.map((expense) => [
-    format(new Date(expense.date), "MMM dd, yyyy"),
-    expense.description,
-    expense.category,
-    `₹${expense.amount.toFixed(2)}`,
-  ])
-
-  // Table
-  doc.autoTable({
-    head: [["Date", "Description", "Category", "Amount"]],
-    body: tableData,
-    startY: 90,
-    styles: {
-      fontSize: 10,
-      cellPadding: 3,
-    },
-    headStyles: {
-      fillColor: [99, 102, 241], // Primary color
-      textColor: 255,
-    },
-    alternateRowStyles: {
-      fillColor: [245, 245, 245],
-    },
-  })
 
   // Category breakdown
   const categoryTotals = expenses.reduce(
@@ -64,170 +118,227 @@ export function exportExpensesToPDF(expenses: Expense[], startDate: Date, endDat
     {} as Record<string, number>,
   )
 
-  const categoryData = Object.entries(categoryTotals)
-    .sort(([, a], [, b]) => b - a)
-    .map(([category, amount]) => [category, `₹${amount.toFixed(2)}`])
+  const categoryData = Object.entries(categoryTotals).sort(([, a], [, b]) => b - a)
 
-  if (categoryData.length > 0) {
-    const finalY = (doc as any).lastAutoTable.finalY || 90
-    doc.setFontSize(14)
-    doc.text("Category Breakdown", 20, finalY + 20)
+  const content = `
+    <div class="header">
+      <h1>Expense Report</h1>
+      <p><strong>Generated for:</strong> ${username}</p>
+      <p><strong>Period:</strong> ${format(startDate, "MMM dd, yyyy")} - ${format(endDate, "MMM dd, yyyy")}</p>
+      <p><strong>Generated on:</strong> ${format(new Date(), "MMM dd, yyyy 'at' HH:mm")}</p>
+    </div>
 
-    doc.autoTable({
-      head: [["Category", "Total Amount"]],
-      body: categoryData,
-      startY: finalY + 30,
-      styles: {
-        fontSize: 10,
-        cellPadding: 3,
-      },
-      headStyles: {
-        fillColor: [99, 102, 241],
-        textColor: 255,
-      },
-    })
-  }
+    <div class="summary">
+      <h2>Summary</h2>
+      <p><strong>Total Expenses:</strong> ₹${totalAmount.toFixed(2)}</p>
+      <p><strong>Number of Transactions:</strong> ${expenses.length}</p>
+      <p><strong>Average per Transaction:</strong> ₹${expenses.length > 0 ? (totalAmount / expenses.length).toFixed(2) : "0.00"}</p>
+    </div>
 
-  doc.save(`expenses-${format(startDate, "yyyy-MM-dd")}-to-${format(endDate, "yyyy-MM-dd")}.pdf`)
+    <div class="section">
+      <h3>Expense Details</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Description</th>
+            <th>Category</th>
+            <th>Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${expenses
+            .map(
+              (expense) => `
+            <tr>
+              <td>${format(new Date(expense.date), "MMM dd, yyyy")}</td>
+              <td>${expense.description}</td>
+              <td>${expense.category}</td>
+              <td class="amount">₹${expense.amount.toFixed(2)}</td>
+            </tr>
+          `,
+            )
+            .join("")}
+        </tbody>
+      </table>
+    </div>
+
+    ${
+      categoryData.length > 0
+        ? `
+    <div class="section">
+      <h3>Category Breakdown</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th>Total Amount</th>
+            <th>Percentage</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${categoryData
+            .map(
+              ([category, amount]) => `
+            <tr>
+              <td>${category}</td>
+              <td class="amount">₹${amount.toFixed(2)}</td>
+              <td class="amount">${((amount / totalAmount) * 100).toFixed(1)}%</td>
+            </tr>
+          `,
+            )
+            .join("")}
+        </tbody>
+      </table>
+    </div>
+    `
+        : ""
+    }
+  `
+
+  createPrintableDocument(content, `Expenses-${format(startDate, "yyyy-MM-dd")}-to-${format(endDate, "yyyy-MM-dd")}`)
 }
 
 export function exportBudgetsToPDF(budgetStatus: BudgetStatus[], username: string) {
-  const doc = new jsPDF()
-
-  // Header
-  doc.setFontSize(20)
-  doc.text("Budget Report", 20, 20)
-
-  doc.setFontSize(12)
-  doc.text(`Generated for: ${username}`, 20, 35)
-  doc.text(`Generated on: ${format(new Date(), "MMM dd, yyyy HH:mm")}`, 20, 45)
-
-  // Summary
   const totalBudget = budgetStatus.reduce((sum, status) => sum + status.budget.amount, 0)
   const totalSpent = budgetStatus.reduce((sum, status) => sum + status.spent, 0)
   const overBudgetCount = budgetStatus.filter((status) => status.isOverBudget).length
 
-  doc.setFontSize(14)
-  doc.text(`Total Budget: ₹${totalBudget.toFixed(2)}`, 20, 60)
-  doc.text(`Total Spent: ₹${totalSpent.toFixed(2)}`, 20, 70)
-  doc.text(`Over Budget Categories: ${overBudgetCount}`, 20, 80)
+  const content = `
+    <div class="header">
+      <h1>Budget Report</h1>
+      <p><strong>Generated for:</strong> ${username}</p>
+      <p><strong>Generated on:</strong> ${format(new Date(), "MMM dd, yyyy 'at' HH:mm")}</p>
+    </div>
 
-  // Table data
-  const tableData = budgetStatus.map((status) => [
-    status.budget.category,
-    status.budget.period,
-    `₹${status.budget.amount.toFixed(2)}`,
-    `₹${status.spent.toFixed(2)}`,
-    `₹${Math.abs(status.remaining).toFixed(2)}`,
-    `${status.percentage.toFixed(1)}%`,
-    status.isOverBudget ? "Over Budget" : "Within Budget",
-  ])
+    <div class="summary">
+      <h2>Summary</h2>
+      <p><strong>Total Budget:</strong> ₹${totalBudget.toFixed(2)}</p>
+      <p><strong>Total Spent:</strong> ₹${totalSpent.toFixed(2)}</p>
+      <p><strong>Overall Usage:</strong> ${totalBudget > 0 ? ((totalSpent / totalBudget) * 100).toFixed(1) : "0"}%</p>
+      <p><strong>Over Budget Categories:</strong> ${overBudgetCount}</p>
+    </div>
 
-  // Table
-  doc.autoTable({
-    head: [["Category", "Period", "Budget", "Spent", "Remaining", "Usage %", "Status"]],
-    body: tableData,
-    startY: 90,
-    styles: {
-      fontSize: 9,
-      cellPadding: 2,
-    },
-    headStyles: {
-      fillColor: [99, 102, 241],
-      textColor: 255,
-    },
-    alternateRowStyles: {
-      fillColor: [245, 245, 245],
-    },
-    columnStyles: {
-      6: {
-        cellWidth: 25,
-        fontSize: 8,
-      },
-    },
-  })
+    <div class="section">
+      <h3>Budget Details</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th>Period</th>
+            <th>Budget</th>
+            <th>Spent</th>
+            <th>Remaining</th>
+            <th>Usage %</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${budgetStatus
+            .map(
+              (status) => `
+            <tr>
+              <td>${status.budget.category}</td>
+              <td style="text-transform: capitalize;">${status.budget.period}</td>
+              <td class="amount">₹${status.budget.amount.toFixed(2)}</td>
+              <td class="amount">₹${status.spent.toFixed(2)}</td>
+              <td class="amount">₹${Math.abs(status.remaining).toFixed(2)}</td>
+              <td class="amount">${status.percentage.toFixed(1)}%</td>
+              <td class="${status.isOverBudget ? "status-over" : "status-ok"}">
+                ${status.isOverBudget ? "Over Budget" : "Within Budget"}
+              </td>
+            </tr>
+          `,
+            )
+            .join("")}
+        </tbody>
+      </table>
+    </div>
+  `
 
-  doc.save(`budgets-${format(new Date(), "yyyy-MM-dd")}.pdf`)
+  createPrintableDocument(content, `Budgets-${format(new Date(), "yyyy-MM-dd")}`)
 }
 
 export function exportStatisticsToPDF(stats: any, startDate: Date, endDate: Date, username: string) {
-  const doc = new jsPDF()
+  const content = `
+    <div class="header">
+      <h1>Statistics Report</h1>
+      <p><strong>Generated for:</strong> ${username}</p>
+      <p><strong>Period:</strong> ${format(startDate, "MMM dd, yyyy")} - ${format(endDate, "MMM dd, yyyy")}</p>
+      <p><strong>Generated on:</strong> ${format(new Date(), "MMM dd, yyyy 'at' HH:mm")}</p>
+    </div>
 
-  // Header
-  doc.setFontSize(20)
-  doc.text("Statistics Report", 20, 20)
+    <div class="summary">
+      <h2>Summary</h2>
+      <p><strong>Total Expenses:</strong> ₹${stats.total.toFixed(2)}</p>
+      <p><strong>Number of Categories:</strong> ${stats.byCategory?.length || 0}</p>
+      <p><strong>Number of Months:</strong> ${stats.byMonth?.length || 0}</p>
+    </div>
 
-  doc.setFontSize(12)
-  doc.text(`Generated for: ${username}`, 20, 35)
-  doc.text(`Period: ${format(startDate, "MMM dd, yyyy")} - ${format(endDate, "MMM dd, yyyy")}`, 20, 45)
-  doc.text(`Generated on: ${format(new Date(), "MMM dd, yyyy HH:mm")}`, 20, 55)
+    ${
+      stats.byMonth && stats.byMonth.length > 0
+        ? `
+    <div class="section">
+      <h3>Monthly Breakdown</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Month</th>
+            <th>Amount</th>
+            <th>Percentage of Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${stats.byMonth
+            .map(
+              (item: any) => `
+            <tr>
+              <td>${new Date(0, item.month - 1).toLocaleString("default", { month: "long" })} ${item.year}</td>
+              <td class="amount">₹${item.total.toFixed(2)}</td>
+              <td class="amount">${stats.total > 0 ? ((item.total / stats.total) * 100).toFixed(1) : "0"}%</td>
+            </tr>
+          `,
+            )
+            .join("")}
+        </tbody>
+      </table>
+    </div>
+    `
+        : ""
+    }
 
-  // Summary
-  doc.setFontSize(16)
-  doc.text(`Total Expenses: ₹${stats.total.toFixed(2)}`, 20, 75)
+    ${
+      stats.byCategory && stats.byCategory.length > 0
+        ? `
+    <div class="section">
+      <h3>Category Breakdown</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th>Amount</th>
+            <th>Percentage of Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${stats.byCategory
+            .map(
+              (item: any) => `
+            <tr>
+              <td>${item.category}</td>
+              <td class="amount">₹${item.total.toFixed(2)}</td>
+              <td class="amount">${((item.total / stats.total) * 100).toFixed(1)}%</td>
+            </tr>
+          `,
+            )
+            .join("")}
+        </tbody>
+      </table>
+    </div>
+    `
+        : ""
+    }
+  `
 
-  let currentY = 90
-
-  // Monthly breakdown
-  if (stats.byMonth && stats.byMonth.length > 0) {
-    doc.setFontSize(14)
-    doc.text("Monthly Breakdown", 20, currentY)
-    currentY += 10
-
-    const monthlyData = stats.byMonth.map((item: any) => [
-      `${new Date(0, item.month - 1).toLocaleString("default", { month: "long" })} ${item.year}`,
-      `₹${item.total.toFixed(2)}`,
-    ])
-
-    doc.autoTable({
-      head: [["Month", "Amount"]],
-      body: monthlyData,
-      startY: currentY,
-      styles: {
-        fontSize: 10,
-        cellPadding: 3,
-      },
-      headStyles: {
-        fillColor: [99, 102, 241],
-        textColor: 255,
-      },
-      alternateRowStyles: {
-        fillColor: [245, 245, 245],
-      },
-    })
-
-    currentY = (doc as any).lastAutoTable.finalY + 20
-  }
-
-  // Category breakdown
-  if (stats.byCategory && stats.byCategory.length > 0) {
-    doc.setFontSize(14)
-    doc.text("Category Breakdown", 20, currentY)
-    currentY += 10
-
-    const categoryData = stats.byCategory.map((item: any) => [
-      item.category,
-      `₹${item.total.toFixed(2)}`,
-      `${((item.total / stats.total) * 100).toFixed(1)}%`,
-    ])
-
-    doc.autoTable({
-      head: [["Category", "Amount", "Percentage"]],
-      body: categoryData,
-      startY: currentY,
-      styles: {
-        fontSize: 10,
-        cellPadding: 3,
-      },
-      headStyles: {
-        fillColor: [99, 102, 241],
-        textColor: 255,
-      },
-      alternateRowStyles: {
-        fillColor: [245, 245, 245],
-      },
-    })
-  }
-
-  doc.save(`statistics-${format(startDate, "yyyy-MM-dd")}-to-${format(endDate, "yyyy-MM-dd")}.pdf`)
+  createPrintableDocument(content, `Statistics-${format(startDate, "yyyy-MM-dd")}-to-${format(endDate, "yyyy-MM-dd")}`)
 }
