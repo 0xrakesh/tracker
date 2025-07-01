@@ -22,12 +22,12 @@ export function ExpenseStats() {
 
   if (loading) {
     return (
-      <Card className="border-4 border-retro-dark shadow-retro">
-        <CardHeader className="bg-retro-deep text-white">
-          <CardTitle className="text-center">STATISTICS</CardTitle>
+      <Card>
+        <CardHeader>
+          <CardTitle>STATISTICS</CardTitle>
         </CardHeader>
-        <CardContent className="p-6 bg-white">
-          <div className="text-center py-8 text-retro-dark">Loading statistics...</div>
+        <CardContent>
+          <div className="text-center py-8 text-muted-foreground">Loading statistics...</div>
         </CardContent>
       </Card>
     )
@@ -35,12 +35,12 @@ export function ExpenseStats() {
 
   if (error) {
     return (
-      <Card className="border-4 border-retro-dark shadow-retro">
-        <CardHeader className="bg-retro-deep text-white">
-          <CardTitle className="text-center">STATISTICS</CardTitle>
+      <Card>
+        <CardHeader>
+          <CardTitle>STATISTICS</CardTitle>
         </CardHeader>
-        <CardContent className="p-6 bg-white">
-          <div className="text-center py-8 text-red-500">{error}</div>
+        <CardContent>
+          <div className="text-center py-8 text-destructive">{error}</div>
         </CardContent>
       </Card>
     )
@@ -48,69 +48,61 @@ export function ExpenseStats() {
 
   if (!stats) {
     return (
-      <Card className="border-4 border-retro-dark shadow-retro">
-        <CardHeader className="bg-retro-deep text-white">
-          <CardTitle className="text-center">STATISTICS</CardTitle>
+      <Card>
+        <CardHeader>
+          <CardTitle>STATISTICS</CardTitle>
         </CardHeader>
-        <CardContent className="p-6 bg-white">
-          <div className="text-center py-8 text-retro-dark">No statistics available</div>
+        <CardContent>
+          <div className="text-center py-8 text-muted-foreground">No statistics available</div>
         </CardContent>
       </Card>
     )
   }
 
   return (
-    <Card className="border-4 border-retro-dark shadow-retro">
-      <CardHeader className="bg-retro-deep text-white">
-        <CardTitle className="text-center">STATISTICS</CardTitle>
-        <CardDescription className="text-center text-white opacity-80">Overview of your expenses</CardDescription>
+    <Card>
+      <CardHeader>
+        <CardTitle>STATISTICS</CardTitle>
+        <CardDescription>Overview of your expenses</CardDescription>
       </CardHeader>
-      <CardContent className="p-6 bg-white">
-        <div className="mb-4">
-          <DateRangePicker startDate={startDate} endDate={endDate} onDateChange={handleDateChange} />
-        </div>
+      <CardContent className="space-y-6">
+        <DateRangePicker startDate={startDate} endDate={endDate} onDateChange={handleDateChange} />
 
-        <div className="space-y-6">
-          <div className="border-2 border-retro-dark p-4 bg-retro-light rounded">
-            <h3 className="text-lg font-bold text-retro-dark mb-2">TOTAL EXPENSES</h3>
-            <p className="text-3xl font-bold text-retro-medium">${stats.total.toFixed(2)}</p>
-            <p className="text-sm text-retro-dark mt-1">
+        <div className="space-y-4">
+          <div className="p-4 bg-muted rounded-lg">
+            <h3 className="text-lg font-bold mb-2">TOTAL EXPENSES</h3>
+            <p className="text-3xl font-bold text-primary">${stats.total.toFixed(2)}</p>
+            <p className="text-sm text-muted-foreground mt-1">
               {format(startDate, "MMM d, yyyy")} - {format(endDate, "MMM d, yyyy")}
             </p>
           </div>
 
           {stats.byMonth && stats.byMonth.length > 0 && (
-            <div className="border-2 border-retro-dark p-4 bg-retro-light rounded">
-              <h3 className="text-lg font-bold text-retro-dark mb-4">MONTHLY BREAKDOWN</h3>
+            <div className="p-4 bg-muted rounded-lg">
+              <h3 className="text-lg font-bold mb-4">MONTHLY BREAKDOWN</h3>
               <div className="space-y-3">
                 {stats.byMonth.map((item) => (
-                  <div
-                    key={`${item.year}-${item.month}`}
-                    className="flex justify-between items-center border-b border-retro-dark pb-2"
-                  >
-                    <span className="font-medium text-retro-dark">
+                  <div key={`${item.year}-${item.month}`} className="flex justify-between items-center">
+                    <span className="font-medium">
                       {getMonthName(item.month)} {item.year}
                     </span>
-                    <span className="font-bold text-retro-medium">${item.total.toFixed(2)}</span>
+                    <span className="font-bold text-primary">${item.total.toFixed(2)}</span>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          <div className="border-2 border-retro-dark p-4 bg-retro-light rounded">
-            <h3 className="text-lg font-bold text-retro-dark mb-4">EXPENSES BY CATEGORY</h3>
+          <div className="p-4 bg-muted rounded-lg">
+            <h3 className="text-lg font-bold mb-4">EXPENSES BY CATEGORY</h3>
             {stats.byCategory.length === 0 ? (
-              <p className="text-retro-dark">No category data available</p>
+              <p className="text-muted-foreground">No category data available</p>
             ) : (
               <div className="space-y-3">
                 {stats.byCategory.map((item) => (
-                  <div
-                    key={item.category}
-                    className="flex justify-between items-center border-b border-retro-dark pb-2"
-                  >
-                    <span className="font-medium text-retro-dark">{item.category}</span>
-                    <span className="font-bold text-retro-medium">${item.total.toFixed(2)}</span>
+                  <div key={item.category} className="flex justify-between items-center">
+                    <span className="font-medium">{item.category}</span>
+                    <span className="font-bold text-primary">${item.total.toFixed(2)}</span>
                   </div>
                 ))}
               </div>

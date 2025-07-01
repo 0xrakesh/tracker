@@ -43,12 +43,12 @@ export function ExpenseList({ expenses, onDelete }: ExpenseListProps) {
             placeholder="Search expenses..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="border-2 border-retro-dark bg-white shadow-retro"
+            className="w-full"
           />
         </div>
         <div className="w-full md:w-48">
           <Select value={filter} onValueChange={setFilter}>
-            <SelectTrigger className="border-2 border-retro-dark bg-white shadow-retro">
+            <SelectTrigger>
               <SelectValue placeholder="Filter by category" />
             </SelectTrigger>
             <SelectContent>
@@ -64,38 +64,34 @@ export function ExpenseList({ expenses, onDelete }: ExpenseListProps) {
       </div>
 
       {filteredExpenses.length === 0 ? (
-        <div className="text-center py-8 text-retro-dark border-2 border-retro-dark bg-white p-4 rounded shadow-retro">
-          No expenses found.
-        </div>
+        <div className="text-center py-8 text-muted-foreground border rounded-lg bg-card">No expenses found.</div>
       ) : (
-        <div className="border-2 border-retro-dark bg-white rounded shadow-retro overflow-hidden">
+        <div className="border rounded-lg bg-card overflow-hidden">
           <div className="overflow-x-auto">
             <Table>
-              <TableHeader className="bg-retro-deep text-white">
+              <TableHeader>
                 <TableRow>
-                  <TableHead className="text-white">DATE</TableHead>
-                  <TableHead className="text-white">DESCRIPTION</TableHead>
-                  <TableHead className="text-white">CATEGORY</TableHead>
-                  <TableHead className="text-right text-white">AMOUNT</TableHead>
-                  <TableHead className="w-[80px] text-white"></TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead className="text-right">Amount</TableHead>
+                  <TableHead className="w-[80px]"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredExpenses.map((expense) => (
-                  <TableRow key={expense._id?.toString()} className="hover:bg-retro-light/30">
+                  <TableRow key={expense._id?.toString()}>
                     <TableCell className="font-medium">{format(new Date(expense.date), "MMM d, yyyy")}</TableCell>
                     <TableCell>{expense.description}</TableCell>
                     <TableCell>{expense.category}</TableCell>
-                    <TableCell className="text-right font-bold text-retro-medium">
-                      ${expense.amount.toFixed(2)}
-                    </TableCell>
+                    <TableCell className="text-right font-bold">${expense.amount.toFixed(2)}</TableCell>
                     <TableCell>
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => handleDelete(expense._id?.toString() || "")}
                         disabled={isDeleting === expense._id?.toString()}
-                        className="hover:bg-red-500 hover:text-white rounded"
+                        className="hover:bg-destructive hover:text-destructive-foreground"
                       >
                         <Trash2 className="h-4 w-4" />
                         <span className="sr-only">Delete</span>
@@ -106,8 +102,8 @@ export function ExpenseList({ expenses, onDelete }: ExpenseListProps) {
               </TableBody>
             </Table>
           </div>
-          <div className="p-4 border-t-2 border-retro-dark bg-white">
-            <div className="text-sm text-retro-dark">
+          <div className="p-4 border-t bg-muted/50">
+            <div className="text-sm text-muted-foreground">
               Showing {filteredExpenses.length} of {expenses.length} expenses
             </div>
           </div>

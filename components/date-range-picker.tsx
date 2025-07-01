@@ -20,15 +20,12 @@ export function DateRangePicker({ startDate, endDate, onDateChange }: DateRangeP
 
   const handleMonthChange = (value: string) => {
     if (value === "all") {
-      // Set to all time (last 5 years to now)
       const newStartDate = subMonths(new Date(), 60)
       const newEndDate = new Date()
       onDateChange(newStartDate, newEndDate)
     } else if (value === "custom") {
-      // Keep current selection and open calendar
       setIsOpen(true)
     } else {
-      // Parse the value (e.g., "2023-05" for May 2023)
       const [year, month] = value.split("-").map(Number)
       const newStartDate = startOfMonth(new Date(year, month - 1))
       const newEndDate = endOfMonth(new Date(year, month - 1))
@@ -48,7 +45,6 @@ export function DateRangePicker({ startDate, endDate, onDateChange }: DateRangeP
     onDateChange(newStartDate, newEndDate)
   }
 
-  // Generate last 12 months options
   const monthOptions = Array.from({ length: 12 }, (_, i) => {
     const date = subMonths(new Date(), i)
     return {
@@ -57,31 +53,24 @@ export function DateRangePicker({ startDate, endDate, onDateChange }: DateRangeP
     }
   })
 
-  // Check if current selection is a full month
   const isFullMonth =
     startDate.getDate() === 1 &&
     endDate.getDate() === new Date(endDate.getFullYear(), endDate.getMonth() + 1, 0).getDate() &&
     startDate.getMonth() === endDate.getMonth() &&
     startDate.getFullYear() === endDate.getFullYear()
 
-  // Get current month value for the select
   const currentMonthValue = isFullMonth ? `${startDate.getFullYear()}-${startDate.getMonth() + 1}` : "custom"
 
   return (
-    <div className="flex flex-col sm:flex-row gap-2 items-center">
+    <div className="flex flex-col sm:flex-row gap-2 items-center bg-card p-4 rounded-lg border">
       <div className="flex items-center gap-1">
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={handlePrevMonth}
-          className="h-8 w-8 border-2 border-retro-dark bg-white"
-        >
+        <Button variant="outline" size="icon" onClick={handlePrevMonth} className="h-8 w-8 bg-transparent">
           <ChevronLeft className="h-4 w-4" />
           <span className="sr-only">Previous month</span>
         </Button>
 
         <Select value={currentMonthValue} onValueChange={handleMonthChange}>
-          <SelectTrigger className="h-9 border-2 border-retro-dark bg-white">
+          <SelectTrigger className="w-[180px] h-8">
             <SelectValue placeholder="Select month" />
           </SelectTrigger>
           <SelectContent>
@@ -99,7 +88,7 @@ export function DateRangePicker({ startDate, endDate, onDateChange }: DateRangeP
           variant="outline"
           size="icon"
           onClick={handleNextMonth}
-          className="h-8 w-8 border-2 border-retro-dark bg-white"
+          className="h-8 w-8 bg-transparent"
           disabled={
             startDate.getMonth() === new Date().getMonth() && startDate.getFullYear() === new Date().getFullYear()
           }
@@ -113,10 +102,7 @@ export function DateRangePicker({ startDate, endDate, onDateChange }: DateRangeP
         <PopoverTrigger asChild>
           <Button
             variant="outline"
-            className={cn(
-              "justify-start text-left font-normal h-9 border-2 border-retro-dark bg-white",
-              !startDate && "text-muted-foreground",
-            )}
+            className={cn("justify-start text-left font-normal h-8", !startDate && "text-muted-foreground")}
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
             {startDate && endDate ? (
@@ -139,6 +125,7 @@ export function DateRangePicker({ startDate, endDate, onDateChange }: DateRangeP
             onSelect={(range) => {
               if (range?.from && range?.to) {
                 onDateChange(range.from, range.to)
+                setIsOpen(false)
               }
             }}
             numberOfMonths={2}

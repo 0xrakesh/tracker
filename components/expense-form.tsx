@@ -55,7 +55,12 @@ export function ExpenseForm({ onSubmit }: ExpenseFormProps) {
     try {
       const success = await onSubmit(values)
       if (success) {
-        form.reset()
+        form.reset({
+          amount: "",
+          category: "",
+          description: "",
+          date: new Date(),
+        })
         toast({
           title: "Expense added",
           description: "Your expense has been added successfully.",
@@ -67,107 +72,98 @@ export function ExpenseForm({ onSubmit }: ExpenseFormProps) {
   }
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        <FormField
-          control={form.control}
-          name="amount"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="text-retro-dark font-bold">AMOUNT</FormLabel>
-              <FormControl>
-                <Input placeholder="0.00" {...field} className="border-2 border-retro-dark bg-white shadow-retro" />
-              </FormControl>
-              <FormDescription className="text-retro-dark">Enter the expense amount</FormDescription>
-              <FormMessage className="text-red-500" />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="category"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="text-retro-dark font-bold">CATEGORY</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+    <div className="space-y-6">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+          <FormField
+            control={form.control}
+            name="amount"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Amount</FormLabel>
                 <FormControl>
-                  <SelectTrigger className="border-2 border-retro-dark bg-white shadow-retro">
-                    <SelectValue placeholder="Select a category" />
-                  </SelectTrigger>
+                  <Input placeholder="0.00" {...field} />
                 </FormControl>
-                <SelectContent>
-                  {categories.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormDescription className="text-retro-dark">Select the expense category</FormDescription>
-              <FormMessage className="text-red-500" />
-            </FormItem>
-          )}
-        />
+                <FormDescription>Enter the expense amount</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="text-retro-dark font-bold">DESCRIPTION</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Describe your expense"
-                  {...field}
-                  className="border-2 border-retro-dark bg-white shadow-retro"
-                />
-              </FormControl>
-              <FormDescription className="text-retro-dark">Provide details about the expense</FormDescription>
-              <FormMessage className="text-red-500" />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="date"
-          render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <FormLabel className="text-retro-dark font-bold">DATE</FormLabel>
-              <Popover>
-                <PopoverTrigger asChild>
+          <FormField
+            control={form.control}
+            name="category"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Category</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full pl-3 text-left font-normal border-2 border-retro-dark bg-white shadow-retro",
-                        !field.value && "text-muted-foreground",
-                      )}
-                    >
-                      {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                    </Button>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a category" />
+                    </SelectTrigger>
                   </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
-                </PopoverContent>
-              </Popover>
-              <FormDescription className="text-retro-dark">The date of the expense</FormDescription>
-              <FormMessage className="text-red-500" />
-            </FormItem>
-          )}
-        />
+                  <SelectContent>
+                    {categories.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormDescription>Select the expense category</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <Button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full bg-retro-medium hover:bg-retro-deep text-white border-2 border-retro-dark shadow-retro"
-        >
-          {isSubmitting ? "ADDING..." : "ADD EXPENSE"}
-        </Button>
-      </form>
-    </Form>
+          <FormField
+            control={form.control}
+            name="description"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Description</FormLabel>
+                <FormControl>
+                  <Textarea placeholder="Describe your expense" {...field} />
+                </FormControl>
+                <FormDescription>Provide details about the expense</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="date"
+            render={({ field }) => (
+              <FormItem className="flex flex-col">
+                <FormLabel>Date</FormLabel>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant="outline"
+                        className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
+                      >
+                        {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
+                  </PopoverContent>
+                </Popover>
+                <FormDescription>The date of the expense</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <Button type="submit" disabled={isSubmitting} className="w-full">
+            {isSubmitting ? "Adding..." : "Add Expense"}
+          </Button>
+        </form>
+      </Form>
+    </div>
   )
 }

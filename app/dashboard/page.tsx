@@ -14,6 +14,7 @@ import { BudgetOverview } from "@/components/budget-overview"
 import { ExpenseInsights } from "@/components/expense-insights"
 import { DateRangePicker } from "@/components/date-range-picker"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Toaster } from "@/components/ui/toaster"
 import { useBudgets } from "@/hooks/use-budgets"
 
@@ -39,7 +40,11 @@ export default function Dashboard() {
   if (authLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-xl font-bold border p-8 bg-card shadow-lg rounded-lg animate-fade-in">Loading...</div>
+        <Card className="p-8">
+          <CardContent className="text-center">
+            <div className="text-xl font-bold">Loading...</div>
+          </CardContent>
+        </Card>
       </div>
     )
   }
@@ -49,32 +54,42 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-background">
       <Header />
 
-      <main className="flex-1 container mx-auto py-6 px-4">
-        <div className="mb-6 animate-fade-in">
-          <h1 className="text-3xl font-bold mb-2 tracking-wide">Personal Finance Tracker</h1>
+      <main className="container mx-auto py-6 px-4 space-y-6">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold tracking-tight">Personal Finance Tracker</h1>
           <p className="text-muted-foreground">Manage your expenses, budgets, and financial insights</p>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Main Content */}
-          <div className="xl:col-span-3 space-y-6">
+          <div className="lg:col-span-3 space-y-6">
             {/* Expense Insights */}
-            <div className="animate-fade-in">
-              <ExpenseInsights />
-            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Expense Insights</CardTitle>
+                <CardDescription>Visual overview of your spending patterns</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ExpenseInsights />
+              </CardContent>
+            </Card>
 
             {/* Expenses Management */}
-            <div className="animate-slide-in">
-              <Tabs defaultValue="expenses" className="border rounded-lg bg-card shadow-sm">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="expenses">Expenses</TabsTrigger>
-                  <TabsTrigger value="add">Add Expense</TabsTrigger>
-                </TabsList>
+            <Card>
+              <CardHeader>
+                <CardTitle>Expense Management</CardTitle>
+                <CardDescription>Track and manage your daily expenses</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Tabs defaultValue="expenses" className="space-y-4">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="expenses">View Expenses</TabsTrigger>
+                    <TabsTrigger value="add">Add Expense</TabsTrigger>
+                  </TabsList>
 
-                <div className="p-6">
                   <TabsContent value="expenses" className="space-y-4">
                     <DateRangePicker startDate={startDate} endDate={endDate} onDateChange={handleDateChange} />
                     {loading ? (
@@ -89,27 +104,29 @@ export default function Dashboard() {
                   <TabsContent value="add">
                     <ExpenseForm onSubmit={addExpense} />
                   </TabsContent>
-                </div>
-              </Tabs>
-            </div>
+                </Tabs>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Stats */}
-            <div className="animate-fade-in">
-              <ExpenseStats />
-            </div>
+            <ExpenseStats />
 
             {/* Budget Management */}
-            <div className="animate-slide-in">
-              <Tabs defaultValue="overview" className="border rounded-lg bg-card shadow-sm">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="overview">Budgets</TabsTrigger>
-                  <TabsTrigger value="create">Create</TabsTrigger>
-                </TabsList>
+            <Card>
+              <CardHeader>
+                <CardTitle>Budget Management</CardTitle>
+                <CardDescription>Set and track your spending limits</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Tabs defaultValue="overview" className="space-y-4">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="overview">Budgets</TabsTrigger>
+                    <TabsTrigger value="create">Create</TabsTrigger>
+                  </TabsList>
 
-                <div className="p-4">
                   <TabsContent value="overview">
                     <BudgetOverview />
                   </TabsContent>
@@ -117,9 +134,9 @@ export default function Dashboard() {
                   <TabsContent value="create">
                     <BudgetForm onSubmit={addBudget} />
                   </TabsContent>
-                </div>
-              </Tabs>
-            </div>
+                </Tabs>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </main>

@@ -40,62 +40,50 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-retro-light p-4">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
-        <Card className="border-4 border-retro-dark shadow-retro">
-          <CardHeader className="bg-retro-deep text-white">
-            <CardTitle className="text-center text-2xl font-bold">FINANCE TRACKER</CardTitle>
-            <CardDescription className="text-center text-white opacity-80">Login to your account</CardDescription>
+        <Card>
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl font-bold">FINANCE TRACKER</CardTitle>
+            <CardDescription>Login to your account</CardDescription>
           </CardHeader>
-          <CardContent className="pt-6 bg-white">
+          <CardContent>
             {error && (
               <Alert variant="destructive" className="mb-4">
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
-            <form onSubmit={handleSubmit}>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="username" className="text-retro-dark">
-                    Username
-                  </Label>
-                  <Input
-                    id="username"
-                    placeholder="Enter your username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    required
-                    className="border-2 border-retro-dark bg-white"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="text-retro-dark">
-                    Password
-                  </Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="Enter your password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    className="border-2 border-retro-dark bg-white"
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full bg-retro-medium hover:bg-retro-deep text-white border-2 border-retro-dark"
-                >
-                  {isLoading ? "Logging in..." : "Login"}
-                </Button>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="username">Username</Label>
+                <Input
+                  id="username"
+                  placeholder="Enter your username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  required
+                />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+              <Button type="submit" disabled={isLoading} className="w-full">
+                {isLoading ? "Logging in..." : "Login"}
+              </Button>
             </form>
           </CardContent>
-          <CardFooter className="flex justify-center border-t-2 border-retro-dark pt-4 bg-white">
-            <p className="text-sm text-retro-dark">
+          <CardFooter className="flex justify-center">
+            <p className="text-sm text-muted-foreground">
               Don&apos;t have an account?{" "}
-              <Link href="/signup" className="text-retro-medium hover:underline">
+              <Link href="/signup" className="text-primary hover:underline">
                 Sign up
               </Link>
             </p>
