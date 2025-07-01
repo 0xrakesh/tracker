@@ -8,17 +8,23 @@ import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
+import { ExportButton } from "./export-button"
+import { exportExpensesToPDF } from "@/lib/pdf-export"
+import { useAuth } from "@/lib/auth-context"
 import { categories } from "@/lib/models/expense"
 
 interface ExpenseListProps {
   expenses: Expense[]
   onDelete: (id: string) => Promise<boolean>
+  startDate?: Date
+  endDate?: Date
 }
 
-export function ExpenseList({ expenses, onDelete }: ExpenseListProps) {
+export function ExpenseList({ expenses, onDelete, startDate, endDate }: ExpenseListProps) {
   const [filter, setFilter] = useState("all")
   const [search, setSearch] = useState("")
   const [isDeleting, setIsDeleting] = useState<string | null>(null)
+  const { user } = useAuth()
 
   const handleDelete = async (id: string) => {
     setIsDeleting(id)
@@ -35,32 +41,41 @@ export function ExpenseList({ expenses, onDelete }: ExpenseListProps) {
     return matchesCategory && matchesSearch
   })
 
+  const handleExport = async (format: "pdf") => {
+    if (format === "pdf" && user && startDate && endDate) {
+      exportExpensesToPDF(filteredExpenses, startDate, endDate, user.username)
+    }
+  }
+
   return (
     <div className="space-y-4">
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="flex-1">
-          <Input
-            placeholder="Search expenses..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full"
-          />
+      <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+        <div className="flex flex-col md:flex-row gap-4 flex-1">
+          <div className="flex-1">
+            <Input
+              placeholder="Search expenses..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full"
+            />
+          </div>
+          <div className="w-full md:w-48">
+            <Select value={filter} onValueChange={setFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {categories.map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {category}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-        <div className="w-full md:w-48">
-          <Select value={filter} onValueChange={setFilter}>
-            <SelectTrigger>
-              <SelectValue placeholder="Filter by category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              {categories.map((category) => (
-                <SelectItem key={category} value={category}>
-                  {category}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <ExportButton onExport={handleExport} disabled={filteredExpenses.length === 0} />
       </div>
 
       {filteredExpenses.length === 0 ? (

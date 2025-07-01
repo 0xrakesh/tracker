@@ -5,15 +5,25 @@ import { format, startOfMonth, endOfMonth } from "date-fns"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useExpenseStats } from "@/hooks/use-stats"
 import { DateRangePicker } from "./date-range-picker"
+import { ExportButton } from "./export-button"
+import { exportStatisticsToPDF } from "@/lib/pdf-export"
+import { useAuth } from "@/lib/auth-context"
 
 export function ExpenseStats() {
   const [startDate, setStartDate] = useState(startOfMonth(new Date()))
   const [endDate, setEndDate] = useState(endOfMonth(new Date()))
   const { stats, loading, error } = useExpenseStats(startDate, endDate)
+  const { user } = useAuth()
 
   const handleDateChange = (newStartDate: Date, newEndDate: Date) => {
     setStartDate(newStartDate)
     setEndDate(newEndDate)
+  }
+
+  const handleExport = async (format: "pdf") => {
+    if (format === "pdf" && user && stats) {
+      exportStatisticsToPDF(stats, startDate, endDate, user.username)
+    }
   }
 
   const getMonthName = (month: number) => {
@@ -62,8 +72,13 @@ export function ExpenseStats() {
   return (
     <Card className="w-full">
       <CardHeader className="pb-4">
-        <CardTitle className="text-lg">STATISTICS</CardTitle>
-        <CardDescription className="text-sm">Overview of your expenses</CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-lg">STATISTICS</CardTitle>
+            <CardDescription className="text-sm">Overview of your expenses</CardDescription>
+          </div>
+          <ExportButton onExport={handleExport} disabled={!stats || stats.total === 0} size="sm" />
+        </div>
       </CardHeader>
       <CardContent className="space-y-4 p-4">
         <div className="w-full overflow-hidden">

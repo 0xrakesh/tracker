@@ -5,15 +5,27 @@ import { Trash2, AlertTriangle, CheckCircle, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
+import { ExportButton } from "./export-button"
+import { exportBudgetsToPDF } from "@/lib/pdf-export"
+import { useAuth } from "@/lib/auth-context"
 import { useBudgets } from "@/hooks/use-budgets"
 
 export function BudgetOverview() {
   const { budgetStatus, loading, error, deleteBudget } = useBudgets()
+  const { user } = useAuth()
+
+  const handleExport = async (format: "pdf") => {
+    if (format === "pdf" && user && budgetStatus.length > 0) {
+      exportBudgetsToPDF(budgetStatus, user.username)
+    }
+  }
 
   if (loading) {
     return (
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Budget Overview</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold">Budget Overview</h3>
+        </div>
         <div className="text-center py-8 text-muted-foreground">Loading budgets...</div>
       </div>
     )
@@ -22,7 +34,9 @@ export function BudgetOverview() {
   if (error) {
     return (
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Budget Overview</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold">Budget Overview</h3>
+        </div>
         <div className="text-center py-8 text-destructive">{error}</div>
       </div>
     )
@@ -31,7 +45,9 @@ export function BudgetOverview() {
   if (budgetStatus.length === 0) {
     return (
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Budget Overview</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold">Budget Overview</h3>
+        </div>
         <div className="text-center py-8 text-muted-foreground">
           <p>No budgets created yet</p>
           <p className="text-sm mt-2">Create your first budget to start tracking your spending limits.</p>
@@ -58,7 +74,10 @@ export function BudgetOverview() {
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold">Budget Overview</h3>
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold">Budget Overview</h3>
+        <ExportButton onExport={handleExport} disabled={budgetStatus.length === 0} size="sm" />
+      </div>
       <div className="space-y-4">
         {budgetStatus.map((status) => (
           <div key={status.budget._id?.toString()} className="border rounded-lg p-4 space-y-3 bg-card">

@@ -96,7 +96,12 @@ export default function Dashboard() {
                     ) : error ? (
                       <div className="text-center py-8 text-destructive">{error}</div>
                     ) : (
-                      <ExpenseList expenses={expenses} onDelete={deleteExpense} />
+                      <ExpenseList
+                        expenses={expenses}
+                        onDelete={deleteExpense}
+                        startDate={startDate}
+                        endDate={endDate}
+                      />
                     )}
                   </TabsContent>
 
