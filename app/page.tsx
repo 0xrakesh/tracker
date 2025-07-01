@@ -35,11 +35,11 @@ export default function Home() {
         {/* Hero Section */}
         <section className="py-20 px-4">
           <div className="container mx-auto text-center max-w-4xl">
-            <h1 className="text-5xl font-bold mb-6 tracking-tight animate-fade-in">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 tracking-tight animate-fade-in">
               Take Control of Your
               <span className="text-primary"> Finances</span>
             </h1>
-            <p className="text-xl mb-8 text-muted-foreground animate-fade-in">
+            <p className="text-base sm:text-xl mb-8 text-muted-foreground animate-fade-in">
               Track expenses, set budgets, and gain insights into your spending habits with our comprehensive finance
               tracker.
             </p>

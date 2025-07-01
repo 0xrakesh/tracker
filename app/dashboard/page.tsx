@@ -60,7 +60,7 @@ export default function Dashboard() {
       <main className="container mx-auto py-6 px-4 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="space-y-2">
-            <h1 className="text-3xl font-bold tracking-tight">Personal Finance Overview</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Personal Finance Overview</h1>
             <p className="text-muted-foreground">Your current financial snapshot</p>
           </div>
           <Link href="/insights">
