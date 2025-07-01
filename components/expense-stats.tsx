@@ -8,12 +8,14 @@ import { DateRangePicker } from "./date-range-picker"
 import { ExportButton } from "./export-button"
 import { exportStatisticsToPDF } from "@/lib/pdf-export"
 import { useAuth } from "@/lib/auth-context"
+import { useVisibility } from "@/lib/visibility-context" // Import useVisibility
 
 export function ExpenseStats() {
   const [startDate, setStartDate] = useState(startOfMonth(new Date()))
   const [endDate, setEndDate] = useState(endOfMonth(new Date()))
   const { stats, loading, error } = useExpenseStats(startDate, endDate)
   const { user } = useAuth()
+  const { showAmounts } = useVisibility() // Use the visibility hook
 
   const handleDateChange = (newStartDate: Date, newEndDate: Date) => {
     setStartDate(newStartDate)
@@ -28,6 +30,10 @@ export function ExpenseStats() {
 
   const getMonthName = (month: number) => {
     return new Date(0, month - 1).toLocaleString("default", { month: "short" })
+  }
+
+  const formatAmount = (amount: number) => {
+    return showAmounts ? `₹${amount.toFixed(2)}` : "₹****.**"
   }
 
   if (loading) {
@@ -88,7 +94,7 @@ export function ExpenseStats() {
         <div className="space-y-4">
           <div className="p-3 bg-muted rounded-lg">
             <h3 className="text-sm font-bold mb-2">TOTAL EXPENSES</h3>
-            <p className="text-2xl font-bold text-primary">₹{stats.total.toFixed(2)}</p>
+            <p className="text-2xl font-bold text-primary">{formatAmount(stats.total)}</p>
             <div className="text-xs text-muted-foreground mt-1">
               <div className="truncate">
                 {format(startDate, "MMM d")} - {format(endDate, "MMM d, yyyy")}
@@ -105,7 +111,7 @@ export function ExpenseStats() {
                     <span className="font-medium truncate pr-2 min-w-0">
                       {getMonthName(item.month)} {item.year}
                     </span>
-                    <span className="font-bold text-primary whitespace-nowrap text-xs">₹{item.total.toFixed(0)}</span>
+                    <span className="font-bold text-primary whitespace-nowrap text-xs">{formatAmount(item.total)}</span>
                   </div>
                 ))}
               </div>
@@ -121,7 +127,7 @@ export function ExpenseStats() {
                 {stats.byCategory.map((item) => (
                   <div key={item.category} className="flex justify-between items-center text-sm">
                     <span className="font-medium truncate pr-2 min-w-0">{item.category}</span>
-                    <span className="font-bold text-primary whitespace-nowrap text-xs">₹{item.total.toFixed(0)}</span>
+                    <span className="font-bold text-primary whitespace-nowrap text-xs">{formatAmount(item.total)}</span>
                   </div>
                 ))}
               </div>

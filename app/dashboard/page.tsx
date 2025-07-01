@@ -17,6 +17,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Toaster } from "@/components/ui/toaster"
 import { useBudgets } from "@/hooks/use-budgets"
+import { useLoans } from "@/hooks/use-loans" // Import the new hook
+import { LoanForm } from "@/components/loan-form" // Import new components
+import { LoanList } from "@/components/loan-list" // Import new components
 import Link from "next/link"
 import { BarChart3 } from "lucide-react"
 
@@ -26,6 +29,7 @@ export default function Dashboard() {
   const [endDate, setEndDate] = useState(endOfMonth(new Date()))
   const { expenses, loading, error, addExpense, deleteExpense } = useExpenses(startDate, endDate)
   const { addBudget } = useBudgets()
+  const { loans, loading: loansLoading, error: loansError, addLoan, deleteLoan, addLoanPayment } = useLoans() // Use the new hook
   const router = useRouter()
 
   const handleDateChange = (newStartDate: Date, newEndDate: Date) => {
@@ -107,6 +111,36 @@ export default function Dashboard() {
 
                   <TabsContent value="add">
                     <ExpenseForm onSubmit={addExpense} />
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+
+            {/* Loan Management */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Loan Management</CardTitle>
+                <CardDescription>Track your loans and payments</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Tabs defaultValue="overview" className="space-y-4">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="overview">View Loans</TabsTrigger>
+                    <TabsTrigger value="add">Add Loan</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="overview" className="space-y-4">
+                    {loansLoading ? (
+                      <div className="text-center py-8 text-muted-foreground">Loading loans...</div>
+                    ) : loansError ? (
+                      <div className="text-center py-8 text-destructive">{loansError}</div>
+                    ) : (
+                      <LoanList loans={loans} onDelete={deleteLoan} onAddPayment={addLoanPayment} />
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="add">
+                    <LoanForm onSubmit={addLoan} />
                   </TabsContent>
                 </Tabs>
               </CardContent>

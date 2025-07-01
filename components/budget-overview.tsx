@@ -9,15 +9,21 @@ import { ExportButton } from "./export-button"
 import { exportBudgetsToPDF } from "@/lib/pdf-export"
 import { useAuth } from "@/lib/auth-context"
 import { useBudgets } from "@/hooks/use-budgets"
+import { useVisibility } from "@/lib/visibility-context" // Import useVisibility
 
 export function BudgetOverview() {
   const { budgetStatus, loading, error, deleteBudget } = useBudgets()
   const { user } = useAuth()
+  const { showAmounts } = useVisibility() // Use the visibility hook
 
   const handleExport = async (format: "pdf") => {
     if (format === "pdf" && user && budgetStatus.length > 0) {
       exportBudgetsToPDF(budgetStatus, user.username)
     }
+  }
+
+  const formatAmount = (amount: number) => {
+    return showAmounts ? `₹${amount.toFixed(2)}` : "₹****.**"
   }
 
   if (loading) {
@@ -102,14 +108,14 @@ export function BudgetOverview() {
 
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="whitespace-nowrap">Spent: ₹{status.spent.toFixed(2)}</span>
-                <span className="whitespace-nowrap">Budget: ₹{status.budget.amount.toFixed(2)}</span>
+                <span className="whitespace-nowrap">Spent: {formatAmount(status.spent)}</span>
+                <span className="whitespace-nowrap">Budget: {formatAmount(status.budget.amount)}</span>
               </div>
               <Progress value={Math.min(status.percentage, 100)} className="h-2" />
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span>{status.percentage.toFixed(1)}% used</span>
                 <span className="whitespace-nowrap">
-                  {status.isOverBudget ? "Over by" : "Remaining"}: ₹{Math.abs(status.remaining).toFixed(2)}
+                  {status.isOverBudget ? "Over by" : "Remaining"}: {formatAmount(Math.abs(status.remaining))}
                 </span>
               </div>
             </div>

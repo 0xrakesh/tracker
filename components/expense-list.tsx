@@ -12,6 +12,7 @@ import { ExportButton } from "./export-button"
 import { exportExpensesToPDF } from "@/lib/pdf-export"
 import { useAuth } from "@/lib/auth-context"
 import { categories } from "@/lib/models/expense"
+import { useVisibility } from "@/lib/visibility-context" // Import useVisibility
 
 interface ExpenseListProps {
   expenses: Expense[]
@@ -25,6 +26,7 @@ export function ExpenseList({ expenses, onDelete, startDate, endDate }: ExpenseL
   const [search, setSearch] = useState("")
   const [isDeleting, setIsDeleting] = useState<string | null>(null)
   const { user } = useAuth()
+  const { showAmounts } = useVisibility() // Use the visibility hook
 
   const handleDelete = async (id: string) => {
     setIsDeleting(id)
@@ -45,6 +47,10 @@ export function ExpenseList({ expenses, onDelete, startDate, endDate }: ExpenseL
     if (format === "pdf" && user && startDate && endDate) {
       exportExpensesToPDF(filteredExpenses, startDate, endDate, user.username)
     }
+  }
+
+  const formatAmount = (amount: number) => {
+    return showAmounts ? `₹${amount.toFixed(2)}` : "₹****.**"
   }
 
   return (
@@ -104,7 +110,7 @@ export function ExpenseList({ expenses, onDelete, startDate, endDate }: ExpenseL
                     </TableCell>
                     <TableCell className="whitespace-nowrap">{expense.category}</TableCell>
                     <TableCell className="text-right font-bold whitespace-nowrap">
-                      ₹{expense.amount.toFixed(2)}
+                      {formatAmount(expense.amount)}
                     </TableCell>
                     <TableCell>
                       <Button

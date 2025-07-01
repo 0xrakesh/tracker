@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell } from "recharts"
 import { useExpenseStats } from "@/hooks/use-stats"
+import { useVisibility } from "@/lib/visibility-context" // Import useVisibility
 
 const COLORS = ["hsl(var(--primary))", "hsl(var(--secondary))", "hsl(var(--accent))", "hsl(var(--muted))"]
 
@@ -16,6 +17,11 @@ export function ExpenseInsights() {
   const today = useMemo(() => new Date(), [])
 
   const { stats, loading, error } = useExpenseStats(sixMonthsAgo, today)
+  const { showAmounts } = useVisibility() // Use the visibility hook
+
+  const formatAmount = (amount: number) => {
+    return showAmounts ? `₹${amount.toFixed(0)}` : "₹****"
+  }
 
   const chartData = useMemo(() => {
     if (!stats?.byMonth) return []
@@ -103,7 +109,7 @@ export function ExpenseInsights() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">This Month</p>
-                  <p className="text-2xl font-bold">₹{insights.currentMonth.toFixed(0)}</p>
+                  <p className="text-2xl font-bold">{formatAmount(insights.currentMonth)}</p>
                 </div>
                 <DollarSign className="h-8 w-8 text-muted-foreground" />
               </div>
@@ -115,7 +121,7 @@ export function ExpenseInsights() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Monthly Avg</p>
-                  <p className="text-2xl font-bold">₹{insights.avgMonthly.toFixed(0)}</p>
+                  <p className="text-2xl font-bold">{formatAmount(insights.avgMonthly)}</p>
                 </div>
                 <Calendar className="h-8 w-8 text-muted-foreground" />
               </div>
@@ -145,7 +151,7 @@ export function ExpenseInsights() {
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Top Category</p>
                 <p className="text-lg font-bold truncate">{insights.topCategory?.category || "N/A"}</p>
-                <p className="text-sm text-muted-foreground">₹{insights.topCategory?.total.toFixed(0) || "0"}</p>
+                <p className="text-sm text-muted-foreground">{formatAmount(insights.topCategory?.total || 0)}</p>
               </div>
             </CardContent>
           </Card>
@@ -173,8 +179,11 @@ export function ExpenseInsights() {
                 <LineChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" />
-                  <YAxis />
-                  <ChartTooltip content={<ChartTooltipContent />} formatter={(value) => [`₹${value}`, "Amount"]} />
+                  <YAxis tickFormatter={(value) => (showAmounts ? `₹${value}` : "₹****")} />
+                  <ChartTooltip
+                    content={<ChartTooltipContent />}
+                    formatter={(value) => [showAmounts ? `₹${value}` : "₹****", "Amount"]}
+                  />
                   <Line
                     type="monotone"
                     dataKey="amount"
@@ -218,7 +227,10 @@ export function ExpenseInsights() {
                       <Cell key={`cell-${index}`} fill={entry.fill} />
                     ))}
                   </Pie>
-                  <ChartTooltip content={<ChartTooltipContent />} formatter={(value) => [`₹${value}`, "Amount"]} />
+                  <ChartTooltip
+                    content={<ChartTooltipContent />}
+                    formatter={(value) => [showAmounts ? `₹${value}` : "₹****", "Amount"]}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             </ChartContainer>

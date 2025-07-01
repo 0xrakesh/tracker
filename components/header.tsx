@@ -1,14 +1,16 @@
 "use client"
 
-import { User, LogOut, BarChart3 } from "lucide-react"
+import { User, LogOut, BarChart3, Eye, EyeOff } from "lucide-react" // Import Eye and EyeOff
 import Link from "next/link"
 import { useRouter, usePathname } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
+import { useVisibility } from "@/lib/visibility-context" // Import useVisibility
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "./theme-toggle"
 
 export function Header() {
   const { user, logout } = useAuth()
+  const { showAmounts, toggleAmountsVisibility } = useVisibility() // Use the visibility hook
   const router = useRouter()
   const pathname = usePathname()
 
@@ -39,6 +41,20 @@ export function Header() {
                 </Button>
               </Link>
             </nav>
+          )}
+
+          {/* Amount Visibility Toggle */}
+          {user && ( // Only show if logged in
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleAmountsVisibility}
+              className="h-9 w-9"
+              title={showAmounts ? "Hide amounts" : "Show amounts"}
+            >
+              {showAmounts ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              <span className="sr-only">{showAmounts ? "Hide amounts" : "Show amounts"}</span>
+            </Button>
           )}
 
           <ThemeToggle />
