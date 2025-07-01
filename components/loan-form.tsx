@@ -13,7 +13,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from "@/components/ui/input"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { toast } from "@/components/ui/use-toast"
-import { calculateMonthlyPayment } from "@/lib/loans"
+import { calculateMonthlyPayment } from "@/lib/loan-calculations" // Updated import path
 
 const formSchema = z.object({
   loanName: z.string().min(1, "Loan name is required"),
