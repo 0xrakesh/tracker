@@ -63,10 +63,10 @@ export function BudgetOverview() {
         {budgetStatus.map((status) => (
           <div key={status.budget._id?.toString()} className="border rounded-lg p-4 space-y-3 bg-card">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 min-w-0 flex-1">
                 {getBudgetStatusIcon(status)}
-                <h4 className="font-semibold">{status.budget.category}</h4>
-                <Badge variant={getBudgetStatusColor(status)} className="capitalize">
+                <h4 className="font-semibold truncate">{status.budget.category}</h4>
+                <Badge variant={getBudgetStatusColor(status)} className="capitalize shrink-0">
                   {status.budget.period}
                 </Badge>
               </div>
@@ -74,7 +74,7 @@ export function BudgetOverview() {
                 variant="ghost"
                 size="icon"
                 onClick={() => deleteBudget(status.budget._id?.toString() || "")}
-                className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0"
               >
                 <Trash2 className="h-4 w-4" />
                 <span className="sr-only">Delete budget</span>
@@ -83,21 +83,24 @@ export function BudgetOverview() {
 
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span>Spent: ${status.spent.toFixed(2)}</span>
-                <span>Budget: ${status.budget.amount.toFixed(2)}</span>
+                <span className="whitespace-nowrap">Spent: ₹{status.spent.toFixed(2)}</span>
+                <span className="whitespace-nowrap">Budget: ₹{status.budget.amount.toFixed(2)}</span>
               </div>
               <Progress value={Math.min(status.percentage, 100)} className="h-2" />
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span>{status.percentage.toFixed(1)}% used</span>
-                <span>
-                  {status.isOverBudget ? "Over by" : "Remaining"}: ${Math.abs(status.remaining).toFixed(2)}
+                <span className="whitespace-nowrap">
+                  {status.isOverBudget ? "Over by" : "Remaining"}: ₹{Math.abs(status.remaining).toFixed(2)}
                 </span>
               </div>
             </div>
 
-            <div className="text-xs text-muted-foreground">
-              {format(new Date(status.budget.startDate), "MMM d")} -{" "}
-              {format(new Date(status.budget.endDate), "MMM d, yyyy")}
+            <div className="text-xs text-muted-foreground break-words">
+              <div className="flex flex-col sm:flex-row sm:gap-2">
+                <span className="whitespace-nowrap">{format(new Date(status.budget.startDate), "MMM d")}</span>
+                <span className="hidden sm:inline">-</span>
+                <span className="whitespace-nowrap">{format(new Date(status.budget.endDate), "MMM d, yyyy")}</span>
+              </div>
             </div>
           </div>
         ))}

@@ -11,15 +11,18 @@ import { useExpenseStats } from "@/hooks/use-stats"
 const COLORS = ["hsl(var(--primary))", "hsl(var(--secondary))", "hsl(var(--accent))", "hsl(var(--muted))"]
 
 export function ExpenseInsights() {
-  const sixMonthsAgo = subMonths(new Date(), 6)
-  const { stats, loading } = useExpenseStats(sixMonthsAgo, new Date())
+  // Use fixed date range to prevent infinite re-renders
+  const sixMonthsAgo = useMemo(() => subMonths(new Date(), 6), [])
+  const today = useMemo(() => new Date(), [])
+
+  const { stats, loading, error } = useExpenseStats(sixMonthsAgo, today)
 
   const chartData = useMemo(() => {
     if (!stats?.byMonth) return []
 
     const months = eachMonthOfInterval({
       start: sixMonthsAgo,
-      end: new Date(),
+      end: today,
     })
 
     return months.map((month) => {
@@ -31,7 +34,7 @@ export function ExpenseInsights() {
         amount: monthData?.total || 0,
       }
     })
-  }, [stats, sixMonthsAgo])
+  }, [stats, sixMonthsAgo, today])
 
   const pieData = useMemo(() => {
     if (!stats?.byCategory) return []
@@ -64,14 +67,29 @@ export function ExpenseInsights() {
 
   if (loading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Expense Insights</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8 text-muted-foreground">Loading insights...</div>
-        </CardContent>
-      </Card>
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i}>
+              <CardContent className="p-4">
+                <div className="animate-pulse">
+                  <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+                  <div className="h-8 bg-muted rounded w-1/2"></div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <div className="text-center py-8 text-muted-foreground">Loading insights...</div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-8 text-destructive">
+        <p>Error loading insights: {error}</p>
+      </div>
     )
   }
 
@@ -85,7 +103,7 @@ export function ExpenseInsights() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">This Month</p>
-                  <p className="text-2xl font-bold">${insights.currentMonth.toFixed(0)}</p>
+                  <p className="text-2xl font-bold">₹{insights.currentMonth.toFixed(0)}</p>
                 </div>
                 <DollarSign className="h-8 w-8 text-muted-foreground" />
               </div>
@@ -97,7 +115,7 @@ export function ExpenseInsights() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Monthly Avg</p>
-                  <p className="text-2xl font-bold">${insights.avgMonthly.toFixed(0)}</p>
+                  <p className="text-2xl font-bold">₹{insights.avgMonthly.toFixed(0)}</p>
                 </div>
                 <Calendar className="h-8 w-8 text-muted-foreground" />
               </div>
@@ -126,8 +144,8 @@ export function ExpenseInsights() {
             <CardContent className="p-4">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Top Category</p>
-                <p className="text-lg font-bold">{insights.topCategory?.category || "N/A"}</p>
-                <p className="text-sm text-muted-foreground">${insights.topCategory?.total.toFixed(0) || "0"}</p>
+                <p className="text-lg font-bold truncate">{insights.topCategory?.category || "N/A"}</p>
+                <p className="text-sm text-muted-foreground">₹{insights.topCategory?.total.toFixed(0) || "0"}</p>
               </div>
             </CardContent>
           </Card>
@@ -156,7 +174,7 @@ export function ExpenseInsights() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="month" />
                   <YAxis />
-                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <ChartTooltip content={<ChartTooltipContent />} formatter={(value) => [`₹${value}`, "Amount"]} />
                   <Line
                     type="monotone"
                     dataKey="amount"
@@ -200,7 +218,7 @@ export function ExpenseInsights() {
                       <Cell key={`cell-${index}`} fill={entry.fill} />
                     ))}
                   </Pie>
-                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <ChartTooltip content={<ChartTooltipContent />} formatter={(value) => [`₹${value}`, "Amount"]} />
                 </PieChart>
               </ResponsiveContainer>
             </ChartContainer>

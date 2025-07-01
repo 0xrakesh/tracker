@@ -71,20 +71,26 @@ export function ExpenseList({ expenses, onDelete }: ExpenseListProps) {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
+                  <TableHead className="min-w-[100px]">Date</TableHead>
+                  <TableHead className="min-w-[150px]">Description</TableHead>
+                  <TableHead className="min-w-[100px]">Category</TableHead>
+                  <TableHead className="text-right min-w-[100px]">Amount</TableHead>
                   <TableHead className="w-[80px]"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredExpenses.map((expense) => (
                   <TableRow key={expense._id?.toString()}>
-                    <TableCell className="font-medium">{format(new Date(expense.date), "MMM d, yyyy")}</TableCell>
-                    <TableCell>{expense.description}</TableCell>
-                    <TableCell>{expense.category}</TableCell>
-                    <TableCell className="text-right font-bold">${expense.amount.toFixed(2)}</TableCell>
+                    <TableCell className="font-medium whitespace-nowrap">
+                      {format(new Date(expense.date), "MMM d, yyyy")}
+                    </TableCell>
+                    <TableCell className="max-w-[200px] truncate" title={expense.description}>
+                      {expense.description}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap">{expense.category}</TableCell>
+                    <TableCell className="text-right font-bold whitespace-nowrap">
+                      ₹{expense.amount.toFixed(2)}
+                    </TableCell>
                     <TableCell>
                       <Button
                         variant="ghost"

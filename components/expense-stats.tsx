@@ -71,10 +71,14 @@ export function ExpenseStats() {
         <div className="space-y-4">
           <div className="p-4 bg-muted rounded-lg">
             <h3 className="text-lg font-bold mb-2">TOTAL EXPENSES</h3>
-            <p className="text-3xl font-bold text-primary">${stats.total.toFixed(2)}</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              {format(startDate, "MMM d, yyyy")} - {format(endDate, "MMM d, yyyy")}
-            </p>
+            <p className="text-3xl font-bold text-primary">₹{stats.total.toFixed(2)}</p>
+            <div className="text-sm text-muted-foreground mt-1 break-words">
+              <div className="flex flex-col sm:flex-row sm:gap-2">
+                <span className="whitespace-nowrap">{format(startDate, "MMM d, yyyy")}</span>
+                <span className="hidden sm:inline">-</span>
+                <span className="whitespace-nowrap">{format(endDate, "MMM d, yyyy")}</span>
+              </div>
+            </div>
           </div>
 
           {stats.byMonth && stats.byMonth.length > 0 && (
@@ -83,10 +87,10 @@ export function ExpenseStats() {
               <div className="space-y-3">
                 {stats.byMonth.map((item) => (
                   <div key={`${item.year}-${item.month}`} className="flex justify-between items-center">
-                    <span className="font-medium">
+                    <span className="font-medium text-sm sm:text-base truncate pr-2">
                       {getMonthName(item.month)} {item.year}
                     </span>
-                    <span className="font-bold text-primary">${item.total.toFixed(2)}</span>
+                    <span className="font-bold text-primary whitespace-nowrap">₹{item.total.toFixed(2)}</span>
                   </div>
                 ))}
               </div>
@@ -101,8 +105,8 @@ export function ExpenseStats() {
               <div className="space-y-3">
                 {stats.byCategory.map((item) => (
                   <div key={item.category} className="flex justify-between items-center">
-                    <span className="font-medium">{item.category}</span>
-                    <span className="font-bold text-primary">${item.total.toFixed(2)}</span>
+                    <span className="font-medium text-sm sm:text-base truncate pr-2">{item.category}</span>
+                    <span className="font-bold text-primary whitespace-nowrap">₹{item.total.toFixed(2)}</span>
                   </div>
                 ))}
               </div>

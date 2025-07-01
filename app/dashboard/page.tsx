@@ -11,12 +11,14 @@ import { ExpenseList } from "@/components/expense-list"
 import { ExpenseStats } from "@/components/expense-stats"
 import { BudgetForm } from "@/components/budget-form"
 import { BudgetOverview } from "@/components/budget-overview"
-import { ExpenseInsights } from "@/components/expense-insights"
 import { DateRangePicker } from "@/components/date-range-picker"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { Toaster } from "@/components/ui/toaster"
 import { useBudgets } from "@/hooks/use-budgets"
+import Link from "next/link"
+import { BarChart3 } from "lucide-react"
 
 export default function Dashboard() {
   const { user, isLoading: authLoading } = useAuth()
@@ -58,25 +60,22 @@ export default function Dashboard() {
       <Header />
 
       <main className="container mx-auto py-6 px-4 space-y-6">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">Personal Finance Tracker</h1>
-          <p className="text-muted-foreground">Manage your expenses, budgets, and financial insights</p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="space-y-2">
+            <h1 className="text-3xl font-bold tracking-tight">Personal Finance Tracker</h1>
+            <p className="text-muted-foreground">Manage your expenses and budgets effectively</p>
+          </div>
+          <Link href="/insights">
+            <Button className="w-full sm:w-auto">
+              <BarChart3 className="h-4 w-4 mr-2" />
+              View Insights
+            </Button>
+          </Link>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Main Content */}
           <div className="lg:col-span-3 space-y-6">
-            {/* Expense Insights */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Expense Insights</CardTitle>
-                <CardDescription>Visual overview of your spending patterns</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ExpenseInsights />
-              </CardContent>
-            </Card>
-
             {/* Expenses Management */}
             <Card>
               <CardHeader>
