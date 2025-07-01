@@ -3,8 +3,11 @@
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { TrendingUp, PieChart, Target, Shield } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { Header } from "@/components/header"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
 export default function Home() {
   const { user, isLoading } = useAuth()
@@ -18,69 +21,125 @@ export default function Home() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-retro-light flex items-center justify-center">
-        <div className="text-xl text-retro-dark font-bold border-4 border-retro-dark p-8 bg-white shadow-retro">
-          Loading...
-        </div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-xl font-bold border p-8 bg-card shadow-lg rounded-lg animate-fade-in">Loading...</div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-retro-light flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col">
       <Header />
 
-      <main className="flex-1 container mx-auto py-12 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-5xl font-bold mb-6 text-retro-dark tracking-wide font-retro">FINANCE TRACKER</h1>
-          <p className="text-xl mb-8 text-retro-dark">
-            A simple way to track your daily expenses and manage your finances.
-          </p>
-
-          <div className="border-4 border-retro-dark bg-white p-8 rounded shadow-retro mb-12">
-            <h2 className="text-2xl font-bold mb-4 text-retro-dark">Track Your Expenses</h2>
-            <p className="mb-6 text-retro-dark">
-              Sign up now to start tracking your expenses, categorize your spending, and gain insights into your
-              financial habits.
+      <main className="flex-1">
+        {/* Hero Section */}
+        <section className="py-20 px-4">
+          <div className="container mx-auto text-center max-w-4xl">
+            <h1 className="text-5xl font-bold mb-6 tracking-tight animate-fade-in">
+              Take Control of Your
+              <span className="text-primary"> Finances</span>
+            </h1>
+            <p className="text-xl mb-8 text-muted-foreground animate-fade-in">
+              Track expenses, set budgets, and gain insights into your spending habits with our comprehensive finance
+              tracker.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                href="/signup"
-                className="bg-retro-medium hover:bg-retro-deep text-white px-6 py-3 rounded shadow-retro font-bold text-lg border-2 border-retro-dark"
-              >
-                SIGN UP NOW
+
+            <div className="flex flex-col sm:flex-row gap-4 justify-center animate-slide-in">
+              <Link href="/signup">
+                <Button size="lg" className="text-lg px-8">
+                  Get Started Free
+                </Button>
               </Link>
-              <Link
-                href="/login"
-                className="border-2 border-retro-dark bg-retro-light hover:bg-retro-light/70 text-retro-dark px-6 py-3 rounded shadow-retro font-bold text-lg"
-              >
-                LOGIN
+              <Link href="/login">
+                <Button variant="outline" size="lg" className="text-lg px-8 bg-transparent">
+                  Sign In
+                </Button>
               </Link>
             </div>
           </div>
+        </section>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="border-4 border-retro-dark bg-white p-6 rounded shadow-retro">
-              <h3 className="text-xl font-bold mb-2 text-retro-dark">Easy to Use</h3>
-              <p className="text-retro-dark">Simple interface to add and track your daily expenses.</p>
-            </div>
-            <div className="border-4 border-retro-dark bg-white p-6 rounded shadow-retro">
-              <h3 className="text-xl font-bold mb-2 text-retro-dark">Categorize</h3>
-              <p className="text-retro-dark">Organize expenses by categories to understand your spending habits.</p>
-            </div>
-            <div className="border-4 border-retro-dark bg-white p-6 rounded shadow-retro">
-              <h3 className="text-xl font-bold mb-2 text-retro-dark">Insights</h3>
-              <p className="text-retro-dark">
-                Get statistics and insights about your spending patterns by month or date range.
+        {/* Features Section */}
+        <section className="py-20 px-4 bg-muted/50">
+          <div className="container mx-auto max-w-6xl">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl font-bold mb-4">Everything you need to manage your money</h2>
+              <p className="text-xl text-muted-foreground">
+                Powerful features to help you understand and control your spending
               </p>
             </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <Card className="animate-fade-in">
+                <CardHeader>
+                  <TrendingUp className="h-10 w-10 text-primary mb-2" />
+                  <CardTitle>Expense Tracking</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription>
+                    Easily track and categorize your daily expenses with our intuitive interface.
+                  </CardDescription>
+                </CardContent>
+              </Card>
+
+              <Card className="animate-fade-in">
+                <CardHeader>
+                  <Target className="h-10 w-10 text-primary mb-2" />
+                  <CardTitle>Budget Management</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription>
+                    Set budgets for different categories and track your progress in real-time.
+                  </CardDescription>
+                </CardContent>
+              </Card>
+
+              <Card className="animate-fade-in">
+                <CardHeader>
+                  <PieChart className="h-10 w-10 text-primary mb-2" />
+                  <CardTitle>Visual Insights</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription>
+                    Get detailed charts and analytics to understand your spending patterns.
+                  </CardDescription>
+                </CardContent>
+              </Card>
+
+              <Card className="animate-fade-in">
+                <CardHeader>
+                  <Shield className="h-10 w-10 text-primary mb-2" />
+                  <CardTitle>Secure & Private</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <CardDescription>
+                    Your financial data is encrypted and secure with user authentication.
+                  </CardDescription>
+                </CardContent>
+              </Card>
+            </div>
           </div>
-        </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="py-20 px-4">
+          <div className="container mx-auto text-center max-w-2xl">
+            <h2 className="text-3xl font-bold mb-4">Ready to take control?</h2>
+            <p className="text-xl text-muted-foreground mb-8">
+              Join thousands of users who have already improved their financial habits.
+            </p>
+            <Link href="/signup">
+              <Button size="lg" className="text-lg px-8">
+                Start Your Journey
+              </Button>
+            </Link>
+          </div>
+        </section>
       </main>
 
-      <footer className="bg-retro-deep text-white p-4 border-t-4 border-retro-dark mt-12">
-        <div className="container mx-auto text-center">
-          <p>&copy; 2023 Finance Tracker. All rights reserved.</p>
+      <footer className="border-t py-8 px-4">
+        <div className="container mx-auto text-center text-muted-foreground">
+          <p>&copy; 2024 Finance Tracker. All rights reserved.</p>
         </div>
       </footer>
     </div>

@@ -9,15 +9,20 @@ import { Header } from "@/components/header"
 import { ExpenseForm } from "@/components/expense-form"
 import { ExpenseList } from "@/components/expense-list"
 import { ExpenseStats } from "@/components/expense-stats"
+import { BudgetForm } from "@/components/budget-form"
+import { BudgetOverview } from "@/components/budget-overview"
+import { ExpenseInsights } from "@/components/expense-insights"
 import { DateRangePicker } from "@/components/date-range-picker"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Toaster } from "@/components/ui/toaster"
+import { useBudgets } from "@/hooks/use-budgets"
 
 export default function Dashboard() {
   const { user, isLoading: authLoading } = useAuth()
   const [startDate, setStartDate] = useState(startOfMonth(new Date()))
   const [endDate, setEndDate] = useState(endOfMonth(new Date()))
   const { expenses, loading, error, addExpense, deleteExpense } = useExpenses(startDate, endDate)
+  const { addBudget } = useBudgets()
   const router = useRouter()
 
   const handleDateChange = (newStartDate: Date, newEndDate: Date) => {
@@ -33,68 +38,88 @@ export default function Dashboard() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-retro-light flex items-center justify-center">
-        <div className="text-xl text-retro-dark font-bold border-4 border-retro-dark p-8 bg-white shadow-retro">
-          Loading...
-        </div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-xl font-bold border p-8 bg-card shadow-lg rounded-lg animate-fade-in">Loading...</div>
       </div>
     )
   }
 
   if (!user) {
-    return null // Will redirect in useEffect
+    return null
   }
 
   return (
-    <div className="min-h-screen bg-retro-light flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col">
       <Header />
 
       <main className="flex-1 container mx-auto py-6 px-4">
-        <h1 className="text-3xl font-bold mb-6 text-retro-dark tracking-wide text-center font-retro">
-          PERSONAL FINANCE TRACKER
-        </h1>
+        <div className="mb-6 animate-fade-in">
+          <h1 className="text-3xl font-bold mb-2 tracking-wide">Personal Finance Tracker</h1>
+          <p className="text-muted-foreground">Manage your expenses, budgets, and financial insights</p>
+        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <Tabs defaultValue="expenses" className="border-4 border-retro-dark rounded bg-white shadow-retro">
-              <TabsList className="bg-retro-deep w-full grid grid-cols-2">
-                <TabsTrigger
-                  value="expenses"
-                  className="data-[state=active]:bg-retro-medium data-[state=active]:text-white font-bold"
-                >
-                  EXPENSES
-                </TabsTrigger>
-                <TabsTrigger
-                  value="add"
-                  className="data-[state=active]:bg-retro-medium data-[state=active]:text-white font-bold"
-                >
-                  ADD EXPENSE
-                </TabsTrigger>
-              </TabsList>
+        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+          {/* Main Content */}
+          <div className="xl:col-span-3 space-y-6">
+            {/* Expense Insights */}
+            <div className="animate-fade-in">
+              <ExpenseInsights />
+            </div>
 
-              <div className="p-4">
-                <TabsContent value="expenses">
-                  <div className="mb-4">
+            {/* Expenses Management */}
+            <div className="animate-slide-in">
+              <Tabs defaultValue="expenses" className="border rounded-lg bg-card shadow-sm">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="expenses">Expenses</TabsTrigger>
+                  <TabsTrigger value="add">Add Expense</TabsTrigger>
+                </TabsList>
+
+                <div className="p-6">
+                  <TabsContent value="expenses" className="space-y-4">
                     <DateRangePicker startDate={startDate} endDate={endDate} onDateChange={handleDateChange} />
-                  </div>
-                  {loading ? (
-                    <div className="text-center py-8 text-retro-dark">Loading expenses...</div>
-                  ) : error ? (
-                    <div className="text-center py-8 text-red-500">{error}</div>
-                  ) : (
-                    <ExpenseList expenses={expenses} onDelete={deleteExpense} />
-                  )}
-                </TabsContent>
+                    {loading ? (
+                      <div className="text-center py-8 text-muted-foreground">Loading expenses...</div>
+                    ) : error ? (
+                      <div className="text-center py-8 text-destructive">{error}</div>
+                    ) : (
+                      <ExpenseList expenses={expenses} onDelete={deleteExpense} />
+                    )}
+                  </TabsContent>
 
-                <TabsContent value="add">
-                  <ExpenseForm onSubmit={addExpense} />
-                </TabsContent>
-              </div>
-            </Tabs>
+                  <TabsContent value="add">
+                    <ExpenseForm onSubmit={addExpense} />
+                  </TabsContent>
+                </div>
+              </Tabs>
+            </div>
           </div>
 
-          <div>
-            <ExpenseStats />
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Stats */}
+            <div className="animate-fade-in">
+              <ExpenseStats />
+            </div>
+
+            {/* Budget Management */}
+            <div className="animate-slide-in">
+              <Tabs defaultValue="overview" className="border rounded-lg bg-card shadow-sm">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="overview">Budgets</TabsTrigger>
+                  <TabsTrigger value="create">Create</TabsTrigger>
+                </TabsList>
+
+                <div className="p-4">
+                  <TabsContent value="overview">
+                    <BudgetOverview />
+                  </TabsContent>
+
+                  <TabsContent value="create">
+                    <BudgetForm onSubmit={addBudget} />
+                  </TabsContent>
+                </div>
+              </Tabs>
+            </div>
           </div>
         </div>
       </main>
