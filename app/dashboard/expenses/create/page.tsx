@@ -40,7 +40,7 @@ export default function AddExpensePage() {
       <Header />
       <main className="container mx-auto py-6 px-4 space-y-6">
         <div className="space-y-2">
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Add New Expense</h1>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight">Add New Expense</h1>
           <p className="text-muted-foreground">Record your spending to keep track of your finances.</p>
         </div>
 

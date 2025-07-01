@@ -24,7 +24,7 @@ export function Header() {
   return (
     <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        <Link href={user ? "/dashboard" : "/"} className="text-2xl font-bold tracking-wider">
+        <Link href={user ? "/dashboard" : "/"} className="text-xl sm:text-2xl font-bold tracking-wider">
           FINANCE TRACKER
         </Link>
 
