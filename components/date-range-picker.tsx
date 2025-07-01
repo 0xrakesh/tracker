@@ -49,7 +49,7 @@ export function DateRangePicker({ startDate, endDate, onDateChange }: DateRangeP
     const date = subMonths(new Date(), i)
     return {
       value: `${date.getFullYear()}-${date.getMonth() + 1}`,
-      label: format(date, "MMMM yyyy"),
+      label: format(date, "MMM yyyy"),
     }
   })
 
@@ -62,15 +62,16 @@ export function DateRangePicker({ startDate, endDate, onDateChange }: DateRangeP
   const currentMonthValue = isFullMonth ? `${startDate.getFullYear()}-${startDate.getMonth() + 1}` : "custom"
 
   return (
-    <div className="flex flex-col sm:flex-row gap-2 items-center bg-card p-4 rounded-lg border">
-      <div className="flex items-center gap-1">
-        <Button variant="outline" size="icon" onClick={handlePrevMonth} className="h-8 w-8 bg-transparent">
-          <ChevronLeft className="h-4 w-4" />
+    <div className="w-full space-y-2">
+      {/* Month Navigation */}
+      <div className="flex items-center justify-between gap-1">
+        <Button variant="outline" size="sm" onClick={handlePrevMonth} className="h-7 w-7 p-0 bg-transparent">
+          <ChevronLeft className="h-3 w-3" />
           <span className="sr-only">Previous month</span>
         </Button>
 
         <Select value={currentMonthValue} onValueChange={handleMonthChange}>
-          <SelectTrigger className="w-[180px] h-8">
+          <SelectTrigger className="h-7 text-xs flex-1 min-w-0">
             <SelectValue placeholder="Select month" />
           </SelectTrigger>
           <SelectContent>
@@ -86,29 +87,33 @@ export function DateRangePicker({ startDate, endDate, onDateChange }: DateRangeP
 
         <Button
           variant="outline"
-          size="icon"
+          size="sm"
           onClick={handleNextMonth}
-          className="h-8 w-8 bg-transparent"
+          className="h-7 w-7 p-0 bg-transparent"
           disabled={
             startDate.getMonth() === new Date().getMonth() && startDate.getFullYear() === new Date().getFullYear()
           }
         >
-          <ChevronRight className="h-4 w-4" />
+          <ChevronRight className="h-3 w-3" />
           <span className="sr-only">Next month</span>
         </Button>
       </div>
 
+      {/* Custom Date Range Picker */}
       <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
-            className={cn("justify-start text-left font-normal h-8", !startDate && "text-muted-foreground")}
+            className={cn(
+              "w-full justify-start text-left font-normal h-7 text-xs",
+              !startDate && "text-muted-foreground",
+            )}
           >
-            <CalendarIcon className="mr-2 h-4 w-4" />
+            <CalendarIcon className="mr-1 h-3 w-3" />
             {startDate && endDate ? (
-              <>
-                {format(startDate, "LLL dd, y")} - {format(endDate, "LLL dd, y")}
-              </>
+              <span className="truncate">
+                {format(startDate, "MMM dd")} - {format(endDate, "MMM dd, yy")}
+              </span>
             ) : (
               <span>Pick a date range</span>
             )}
@@ -128,7 +133,7 @@ export function DateRangePicker({ startDate, endDate, onDateChange }: DateRangeP
                 setIsOpen(false)
               }
             }}
-            numberOfMonths={2}
+            numberOfMonths={1}
             initialFocus
           />
         </PopoverContent>

@@ -73,9 +73,9 @@ export default function Dashboard() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Main Content */}
-          <div className="lg:col-span-3 space-y-6">
+          <div className="lg:col-span-8 space-y-6">
             {/* Expenses Management */}
             <Card>
               <CardHeader>
@@ -109,21 +109,27 @@ export default function Dashboard() {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="lg:col-span-4 space-y-6 min-w-0">
             {/* Stats */}
-            <ExpenseStats />
+            <div className="w-full">
+              <ExpenseStats />
+            </div>
 
             {/* Budget Management */}
-            <Card>
+            <Card className="w-full">
               <CardHeader>
-                <CardTitle>Budget Management</CardTitle>
-                <CardDescription>Set and track your spending limits</CardDescription>
+                <CardTitle className="text-lg">Budget Management</CardTitle>
+                <CardDescription className="text-sm">Set and track your spending limits</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-4">
                 <Tabs defaultValue="overview" className="space-y-4">
                   <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="overview">Budgets</TabsTrigger>
-                    <TabsTrigger value="create">Create</TabsTrigger>
+                    <TabsTrigger value="overview" className="text-xs">
+                      Budgets
+                    </TabsTrigger>
+                    <TabsTrigger value="create" className="text-xs">
+                      Create
+                    </TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="overview">
