@@ -1,38 +1,37 @@
 import mongoose, { Schema, type Document, type Model } from "mongoose"
 import type { Types } from "mongoose"
 
-export type Frequency = "daily" | "weekly" | "monthly" | "quarterly" | "yearly"
-
 export interface RecurringTransaction extends Document {
   userId: Types.ObjectId
-  name: string
   amount: number
   category: string
-  bankAccountId?: Types.ObjectId // Optional: Link to a bank account
-  frequency: Frequency
-  startDate: Date
-  nextOccurrenceDate: Date // Date when the next expense should be generated
-  lastGeneratedDate?: Date // Date when the last expense was generated
-  description?: string
+  description: string
+  frequency: "daily" | "weekly" | "monthly" | "yearly"
+  nextOccurrenceDate: Date
+  bankAccountId?: Types.ObjectId
+  isActive: boolean
   createdAt: Date
 }
 
 const RecurringTransactionSchema: Schema = new Schema({
   userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
-  name: { type: String, required: true },
   amount: { type: Number, required: true },
   category: { type: String, required: true },
-  bankAccountId: { type: Schema.Types.ObjectId, ref: "BankAccount" },
-  frequency: { type: String, enum: ["daily", "weekly", "monthly", "quarterly", "yearly"], required: true },
-  startDate: { type: Date, required: true },
+  description: { type: String, required: true },
+  frequency: {
+    type: String,
+    required: true,
+    enum: ["daily", "weekly", "monthly", "yearly"],
+  },
   nextOccurrenceDate: { type: Date, required: true },
-  lastGeneratedDate: { type: Date },
-  description: { type: String },
+  bankAccountId: { type: Schema.Types.ObjectId, ref: "BankAccount" },
+  isActive: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now },
 })
 
+// Prevent re-compilation error in development
 const RecurringTransactionModel: Model<RecurringTransaction> =
-  mongoose.models.RecurringTransaction ||
+  mongoose.models?.RecurringTransaction ||
   mongoose.model<RecurringTransaction>("RecurringTransaction", RecurringTransactionSchema)
 
 export default RecurringTransactionModel

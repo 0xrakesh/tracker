@@ -1,27 +1,26 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
 import type { Expense } from "@/lib/models/expense"
 
-export function useBankAccountTransactions(bankAccountId: string) {
+export function useBankAccountTransactions(bankAccountId: string | null) {
   const [transactions, setTransactions] = useState<Expense[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchTransactions = useCallback(async () => {
-    if (!bankAccountId) {
-      setTransactions([])
-      setLoading(false)
-      return
-    }
+  const fetchTransactions = async () => {
+    if (!bankAccountId) return
 
     setLoading(true)
     setError(null)
+
     try {
       const response = await fetch(`/api/bank-accounts/${bankAccountId}/transactions`)
+
       if (!response.ok) {
-        throw new Error("Failed to fetch bank account transactions")
+        throw new Error("Failed to fetch transactions")
       }
+
       const data = await response.json()
       setTransactions(data)
     } catch (err) {
@@ -29,11 +28,13 @@ export function useBankAccountTransactions(bankAccountId: string) {
     } finally {
       setLoading(false)
     }
-  }, [bankAccountId])
+  }
 
   useEffect(() => {
-    fetchTransactions()
-  }, [fetchTransactions])
+    if (bankAccountId) {
+      fetchTransactions()
+    }
+  }, [bankAccountId])
 
   return {
     transactions,

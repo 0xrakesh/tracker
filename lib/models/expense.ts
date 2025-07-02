@@ -7,7 +7,7 @@ export interface Expense extends Document {
   category: string
   date: Date
   description?: string
-  bankAccountId?: Types.ObjectId // Optional: Link to a bank account
+  bankAccountId?: Types.ObjectId
   createdAt: Date
 }
 
@@ -28,13 +28,14 @@ export const categories = [
 const ExpenseSchema: Schema = new Schema({
   userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
   amount: { type: Number, required: true },
-  category: { type: String, required: true },
+  category: { type: String, required: true, enum: categories },
   date: { type: Date, required: true },
   description: { type: String },
   bankAccountId: { type: Schema.Types.ObjectId, ref: "BankAccount" },
   createdAt: { type: Date, default: Date.now },
 })
 
-const ExpenseModel: Model<Expense> = mongoose.models.Expense || mongoose.model<Expense>("Expense", ExpenseSchema)
+// Prevent re-compilation error in development
+const ExpenseModel: Model<Expense> = mongoose.models?.Expense || mongoose.model<Expense>("Expense", ExpenseSchema)
 
 export default ExpenseModel
