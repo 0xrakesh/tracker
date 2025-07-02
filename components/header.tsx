@@ -1,26 +1,14 @@
 "use client"
 
-import {
-  User,
-  LogOut,
-  BarChart3,
-  Eye,
-  EyeOff,
-  Menu,
-  ReceiptText,
-  PiggyBank,
-  Wallet,
-  Landmark,
-  Goal,
-  Repeat,
-} from "lucide-react"
+import { User, LogOut, BarChart3, Eye, EyeOff, Menu, PlusCircle, Wallet, PiggyBank, ReceiptText } from "lucide-react" // Import new icons
 import Link from "next/link"
 import { useRouter, usePathname } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { useVisibility } from "@/lib/visibility-context"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "./theme-toggle"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet" // Import Sheet components
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu" // Import DropdownMenu components
 
 export function Header() {
   const { user, logout } = useAuth()
@@ -71,15 +59,6 @@ export function Header() {
                           Insights
                         </Button>
                       </Link>
-                      <Link href="/dashboard/recurring-transactions">
-                        <Button
-                          variant={pathname === "/dashboard/recurring-transactions" ? "default" : "ghost"}
-                          className="w-full justify-start"
-                        >
-                          <Repeat className="h-4 w-4 mr-2" />
-                          Recurring Transactions
-                        </Button>
-                      </Link>
                       <div className="border-t my-2" />
                       <span className="text-sm font-semibold text-muted-foreground px-3 py-1">Add New</span>
                       <Link href="/dashboard/expenses/create">
@@ -100,30 +79,12 @@ export function Header() {
                           Add Loan
                         </Button>
                       </Link>
-                      <Link href="/dashboard/bank-accounts/create">
-                        <Button variant="ghost" className="w-full justify-start">
-                          <Landmark className="h-4 w-4 mr-2" />
-                          Add Bank Account
-                        </Button>
-                      </Link>
-                      <Link href="/dashboard/savings-goals/create">
-                        <Button variant="ghost" className="w-full justify-start">
-                          <Goal className="h-4 w-4 mr-2" />
-                          Add Savings Goal
-                        </Button>
-                      </Link>
-                      <Link href="/dashboard/recurring-transactions/create">
-                        <Button variant="ghost" className="w-full justify-start">
-                          <Repeat className="h-4 w-4 mr-2" />
-                          Add Recurring Transaction
-                        </Button>
-                      </Link>
                     </nav>
                   </SheetContent>
                 </Sheet>
               </div>
 
-              {/* Desktop Navigation (Direct Links) */}
+              {/* Desktop Navigation (Direct Links + Dropdown for Add) */}
               <nav className="hidden md:flex items-center gap-2">
                 <Link href="/dashboard">
                   <Button variant={pathname === "/dashboard" ? "default" : "ghost"} size="sm">
@@ -136,24 +97,34 @@ export function Header() {
                     Insights
                   </Button>
                 </Link>
-                <Link href="/dashboard/recurring-transactions">
-                  <Button variant={pathname === "/dashboard/recurring-transactions" ? "default" : "ghost"} size="sm">
-                    <Repeat className="h-4 w-4 mr-2" />
-                    Recurring
-                  </Button>
-                </Link>
-                <Link href="/dashboard/expenses/create">
-                  <Button variant="ghost" size="sm">
-                    <ReceiptText className="h-4 w-4 mr-2" />
-                    Add Expense
-                  </Button>
-                </Link>
-                <Link href="/dashboard/bank-accounts/create">
-                  <Button variant="ghost" size="sm">
-                    <Landmark className="h-4 w-4 mr-2" />
-                    Add Account
-                  </Button>
-                </Link>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm">
+                      <PlusCircle className="h-4 w-4 mr-2" />
+                      Add New
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem asChild>
+                      <Link href="/dashboard/expenses/create">
+                        <ReceiptText className="h-4 w-4 mr-2" />
+                        Add Expense
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/dashboard/budgets/create">
+                        <PiggyBank className="h-4 w-4 mr-2" />
+                        Add Budget
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/dashboard/loans/create">
+                        <Wallet className="h-4 w-4 mr-2" />
+                        Add Loan
+                      </Link>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </nav>
             </>
           )}

@@ -1,10 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { addExpense, getExpenses } from "@/lib/expenses"
-import { updateBankAccountBalance } from "@/lib/bank-accounts" // Import the new function
 import type { Expense } from "@/lib/models/expense"
 import clientPromise from "@/lib/mongodb"
-import { ObjectId } from "mongodb" // Import ObjectId
 
 export async function GET(req: NextRequest) {
   try {
@@ -83,27 +81,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    const expenseAmount = Number.parseFloat(data.amount)
-    if (isNaN(expenseAmount) || expenseAmount <= 0) {
-      return NextResponse.json({ error: "Amount must be a positive number" }, { status: 400 })
-    }
-
     const expense: Omit<Expense, "_id" | "createdAt"> = {
       userId: session.userId,
-      amount: expenseAmount,
+      amount: Number.parseFloat(data.amount),
       category: data.category,
       description: data.description,
       date: new Date(data.date || new Date()),
-      bankAccountId: data.bankAccountId ? new ObjectId(data.bankAccountId) : undefined, // New: Add bankAccountId
     }
 
     const result = await addExpense(expense)
-
-    // New: Deduct amount from bank account if provided
-    if (data.bankAccountId) {
-      await updateBankAccountBalance(data.bankAccountId, session.userId, -expenseAmount) // Deduct amount
-    }
-
     return NextResponse.json({ success: true, id: result.insertedId })
   } catch (error) {
     console.error("Error adding expense:", error)

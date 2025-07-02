@@ -16,7 +16,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "@/components/ui/use-toast"
 import { categories } from "@/lib/models/expense"
-import { useBankAccounts } from "@/hooks/use-bank-accounts" // Import the new hook
 
 const formSchema = z.object({
   amount: z
@@ -30,7 +29,6 @@ const formSchema = z.object({
   date: z.date({
     required_error: "Date is required",
   }),
-  bankAccountId: z.string().optional(), // New: Optional bank account ID
 })
 
 type FormValues = z.infer<typeof formSchema>
@@ -41,7 +39,6 @@ interface ExpenseFormProps {
 
 export function ExpenseForm({ onSubmit }: ExpenseFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const { bankAccounts, loading: accountsLoading, error: accountsError } = useBankAccounts() // Fetch bank accounts
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -50,7 +47,6 @@ export function ExpenseForm({ onSubmit }: ExpenseFormProps) {
       category: "",
       description: "",
       date: new Date(),
-      bankAccountId: "none", // Initialize bankAccountId with a non-empty string
     },
   })
 
@@ -64,7 +60,6 @@ export function ExpenseForm({ onSubmit }: ExpenseFormProps) {
           category: "",
           description: "",
           date: new Date(),
-          bankAccountId: "none", // Reset bankAccountId with a non-empty string
         })
         toast({
           title: "Expense added",
@@ -159,49 +154,6 @@ export function ExpenseForm({ onSubmit }: ExpenseFormProps) {
                   </PopoverContent>
                 </Popover>
                 <FormDescription>The date of the expense</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="bankAccountId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Bank Account (Optional)</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a bank account" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {accountsLoading ? (
-                      <SelectItem value="" disabled>
-                        Loading accounts...
-                      </SelectItem>
-                    ) : accountsError ? (
-                      <SelectItem value="" disabled>
-                        Error loading accounts
-                      </SelectItem>
-                    ) : bankAccounts.length === 0 ? (
-                      <SelectItem value="" disabled>
-                        No accounts found. Add one first!
-                      </SelectItem>
-                    ) : (
-                      <>
-                        <SelectItem value="none">None</SelectItem> {/* Option for no account */}
-                        {bankAccounts.map((account) => (
-                          <SelectItem key={account._id?.toString()} value={account._id?.toString() || ""}>
-                            {account.bankName} ({account.accountName}) - ₹{account.currentBalance.toFixed(2)}
-                          </SelectItem>
-                        ))}
-                      </>
-                    )}
-                  </SelectContent>
-                </Select>
-                <FormDescription>Select the bank account this expense was paid from.</FormDescription>
                 <FormMessage />
               </FormItem>
             )}

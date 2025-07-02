@@ -1,134 +1,113 @@
+import { ObjectId } from "mongodb"
 import clientPromise from "./mongodb"
 import type { Expense } from "./models/expense"
-import { ObjectId } from "mongodb"
+
+export async function getExpenses(userId: string, startDate?: Date, endDate?: Date) {
+  const client = await clientPromise
+  const db = client.db("finance-tracker")
+
+  const query: any = { userId }
+
+  // Add date filtering if provided
+  if (startDate || endDate) {
+    query.date = {}
+    if (startDate) {
+      query.date.$gte = startDate
+    }
+    if (endDate) {
+      query.date.$lte = endDate
+    }
+  }
+
+  const expenses = await db.collection("expenses").find(query).sort({ date: -1 }).toArray()
+
+  return JSON.parse(JSON.stringify(expenses))
+}
 
 export async function addExpense(expense: Omit<Expense, "_id" | "createdAt">) {
-  try {
-    const client = await clientPromise
-    const db = client.db("finance-tracker")
+  const client = await clientPromise
+  const db = client.db("finance-tracker")
 
-    const result = await db.collection("expenses").insertOne({
-      ...expense,
-      createdAt: new Date(),
-    })
+  const result = await db.collection("expenses").insertOne({
+    ...expense,
+    createdAt: new Date(),
+  })
 
-    return result
-  } catch (error) {
-    console.error("Error adding expense:", error)
-    throw error
-  }
+  return result
 }
 
-export async function getExpenses(userId: ObjectId, startDate?: Date, endDate?: Date) {
-  try {
-    const client = await clientPromise
-    const db = client.db("finance-tracker")
+export async function deleteExpense(id: string) {
+  const client = await clientPromise
+  const db = client.db("finance-tracker")
 
-    const query: any = { userId: new ObjectId(userId) }
+  const result = await db.collection("expenses").deleteOne({
+    _id: new ObjectId(id),
+  })
 
-    if (startDate || endDate) {
-      query.date = {}
-      if (startDate) query.date.$gte = startDate
-      if (endDate) query.date.$lte = endDate
+  return result
+}
+
+export async function getExpenseStats(userId: string, startDate?: Date, endDate?: Date) {
+  const client = await clientPromise
+  const db = client.db("finance-tracker")
+
+  const matchStage: any = { userId }
+
+  // Add date filtering if provided
+  if (startDate || endDate) {
+    matchStage.date = {}
+    if (startDate) {
+      matchStage.date.$gte = startDate
     }
-
-    const expenses = await db.collection("expenses").find(query).sort({ date: -1 }).toArray()
-
-    return expenses
-  } catch (error) {
-    console.error("Error fetching expenses:", error)
-    throw error
-  }
-}
-
-export async function deleteExpense(expenseId: string, userId: ObjectId) {
-  try {
-    const client = await clientPromise
-    const db = client.db("finance-tracker")
-
-    const result = await db.collection("expenses").deleteOne({
-      _id: new ObjectId(expenseId),
-      userId: new ObjectId(userId),
-    })
-
-    return result
-  } catch (error) {
-    console.error("Error deleting expense:", error)
-    throw error
-  }
-}
-
-export async function getExpenseStats(userId: ObjectId, startDate?: Date, endDate?: Date) {
-  try {
-    const client = await clientPromise
-    const db = client.db("finance-tracker")
-
-    const matchQuery: any = { userId: new ObjectId(userId) }
-
-    if (startDate || endDate) {
-      matchQuery.date = {}
-      if (startDate) matchQuery.date.$gte = startDate
-      if (endDate) matchQuery.date.$lte = endDate
+    if (endDate) {
+      matchStage.date.$lte = endDate
     }
+  }
 
-    const pipeline = [
-      { $match: matchQuery },
-      {
-        $group: {
-          _id: null,
-          totalAmount: { $sum: "$amount" },
-          totalCount: { $sum: 1 },
-          avgAmount: { $avg: "$amount" },
-        },
-      },
-    ]
+  // Get total expenses
+  const total = await db
+    .collection("expenses")
+    .aggregate([{ $match: matchStage }, { $group: { _id: null, total: { $sum: "$amount" } } }])
+    .toArray()
 
-    const categoryPipeline = [
-      { $match: matchQuery },
-      {
-        $group: {
-          _id: "$category",
-          amount: { $sum: "$amount" },
-          count: { $sum: 1 },
-        },
-      },
-      { $sort: { amount: -1 } },
-    ]
-
-    const [totalStats, categoryStats] = await Promise.all([
-      db.collection("expenses").aggregate(pipeline).toArray(),
-      db.collection("expenses").aggregate(categoryPipeline).toArray(),
+  // Get expenses by category
+  const byCategory = await db
+    .collection("expenses")
+    .aggregate([
+      { $match: matchStage },
+      { $group: { _id: "$category", total: { $sum: "$amount" } } },
+      { $sort: { total: -1 } },
     ])
+    .toArray()
 
-    return {
-      total: totalStats[0]?.totalAmount || 0,
-      count: totalStats[0]?.totalCount || 0,
-      average: totalStats[0]?.avgAmount || 0,
-      byCategory: categoryStats,
-    }
-  } catch (error) {
-    console.error("Error fetching expense stats:", error)
-    throw error
-  }
-}
+  // Get expenses by month (if date range spans multiple months)
+  const byMonth = await db
+    .collection("expenses")
+    .aggregate([
+      { $match: matchStage },
+      {
+        $group: {
+          _id: {
+            year: { $year: "$date" },
+            month: { $month: "$date" },
+          },
+          total: { $sum: "$amount" },
+        },
+      },
+      { $sort: { "_id.year": 1, "_id.month": 1 } },
+    ])
+    .toArray()
 
-export async function getExpensesByBankAccountId(bankAccountId: string, userId: ObjectId) {
-  try {
-    const client = await clientPromise
-    const db = client.db("finance-tracker")
-
-    const expenses = await db
-      .collection("expenses")
-      .find({
-        bankAccountId: new ObjectId(bankAccountId),
-        userId: new ObjectId(userId),
-      })
-      .sort({ date: -1 })
-      .toArray()
-
-    return expenses
-  } catch (error) {
-    console.error("Error fetching expenses by bank account:", error)
-    throw error
+  return {
+    total: total.length > 0 ? total[0].total : 0,
+    byCategory: byCategory.map((item) => ({
+      category: item._id,
+      total: item.total,
+    })),
+    byMonth: byMonth.map((item) => ({
+      year: item._id.year,
+      month: item._id.month,
+      total: item.total,
+    })),
   }
 }
