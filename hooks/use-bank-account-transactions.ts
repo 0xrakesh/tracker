@@ -11,18 +11,17 @@ export function useBankAccountTransactions(bankAccountId: string | null) {
   const fetchTransactions = async () => {
     if (!bankAccountId) return
 
-    setLoading(true)
-    setError(null)
-
     try {
+      setLoading(true)
       const response = await fetch(`/api/bank-accounts/${bankAccountId}/transactions`)
 
       if (!response.ok) {
-        throw new Error("Failed to fetch bank account transactions")
+        throw new Error("Failed to fetch transactions")
       }
 
       const data = await response.json()
       setTransactions(data)
+      setError(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred")
     } finally {

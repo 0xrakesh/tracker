@@ -9,10 +9,8 @@ export function useRecurringTransactions() {
   const [error, setError] = useState<string | null>(null)
 
   const fetchTransactions = async () => {
-    setLoading(true)
-    setError(null)
-
     try {
+      setLoading(true)
       const response = await fetch("/api/recurring-transactions")
 
       if (!response.ok) {
@@ -21,6 +19,7 @@ export function useRecurringTransactions() {
 
       const data = await response.json()
       setTransactions(data)
+      setError(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred")
     } finally {
@@ -28,7 +27,9 @@ export function useRecurringTransactions() {
     }
   }
 
-  const addTransaction = async (transaction: Omit<RecurringTransaction, "_id" | "userId" | "createdAt">) => {
+  const addTransaction = async (
+    transaction: Omit<RecurringTransaction, "_id" | "userId" | "createdAt" | "updatedAt">,
+  ) => {
     try {
       const response = await fetch("/api/recurring-transactions", {
         method: "POST",
@@ -68,25 +69,6 @@ export function useRecurringTransactions() {
     }
   }
 
-  const processTransactions = async () => {
-    try {
-      const response = await fetch("/api/recurring-transactions/process", {
-        method: "POST",
-      })
-
-      if (!response.ok) {
-        throw new Error("Failed to process recurring transactions")
-      }
-
-      const result = await response.json()
-      await fetchTransactions()
-      return result.message
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred")
-      return null
-    }
-  }
-
   useEffect(() => {
     fetchTransactions()
   }, [])
@@ -95,9 +77,8 @@ export function useRecurringTransactions() {
     transactions,
     loading,
     error,
-    fetchTransactions,
     addTransaction,
     deleteTransaction,
-    processTransactions,
+    refetch: fetchTransactions,
   }
 }

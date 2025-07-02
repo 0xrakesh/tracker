@@ -28,6 +28,6 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     return NextResponse.json(transactions)
   } catch (error) {
     console.error("Error fetching bank account transactions:", error)
-    return NextResponse.json({ error: "Failed to fetch bank account transactions" }, { status: 500 })
+    return NextResponse.json({ error: "Failed to fetch transactions" }, { status: 500 })
   }
 }

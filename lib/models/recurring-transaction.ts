@@ -48,7 +48,6 @@ const recurringTransactionSchema = new mongoose.Schema(
     bankAccountId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "BankAccount",
-      required: false,
     },
     isActive: {
       type: Boolean,
@@ -60,7 +59,6 @@ const recurringTransactionSchema = new mongoose.Schema(
   },
 )
 
-// Prevent re-compilation error
 const RecurringTransactionModel =
   mongoose.models?.RecurringTransaction || mongoose.model("RecurringTransaction", recurringTransactionSchema)
 

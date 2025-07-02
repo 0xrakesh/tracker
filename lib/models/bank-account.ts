@@ -44,7 +44,6 @@ const bankAccountSchema = new mongoose.Schema(
   },
 )
 
-// Prevent re-compilation error
 const BankAccountModel = mongoose.models?.BankAccount || mongoose.model("BankAccount", bankAccountSchema)
 
 export default BankAccountModel

@@ -1,9 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
-import { getRecurringTransactions, addRecurringTransaction } from "@/lib/recurring-transactions"
+import { addRecurringTransaction, getRecurringTransactions } from "@/lib/recurring-transactions"
 import clientPromise from "@/lib/mongodb"
+import { ObjectId } from "mongodb"
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const sessionId = cookies().get("session")?.value
 
@@ -23,7 +24,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Session expired" }, { status: 401 })
     }
 
-    const transactions = await getRecurringTransactions(session.userId)
+    const transactions = await getRecurringTransactions(new ObjectId(session.userId))
     return NextResponse.json(transactions)
   } catch (error) {
     console.error("Error fetching recurring transactions:", error)
@@ -57,8 +58,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    const result = await addRecurringTransaction(session.userId, data)
-    return NextResponse.json({ success: true, id: result._id })
+    const transaction = {
+      userId: new ObjectId(session.userId),
+      amount: Number.parseFloat(data.amount),
+      category: data.category,
+      description: data.description,
+      frequency: data.frequency,
+      nextOccurrenceDate: new Date(data.nextOccurrenceDate || new Date()),
+      bankAccountId: data.bankAccountId ? new ObjectId(data.bankAccountId) : undefined,
+      isActive: true,
+    }
+
+    const result = await addRecurringTransaction(transaction)
+    return NextResponse.json({ success: true, id: result.insertedId })
   } catch (error) {
     console.error("Error adding recurring transaction:", error)
     return NextResponse.json({ error: "Failed to add recurring transaction" }, { status: 500 })

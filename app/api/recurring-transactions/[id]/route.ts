@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { deleteRecurringTransaction } from "@/lib/recurring-transactions"
 import clientPromise from "@/lib/mongodb"
+import { ObjectId } from "mongodb"
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -23,9 +24,9 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
       return NextResponse.json({ error: "Session expired" }, { status: 401 })
     }
 
-    const success = await deleteRecurringTransaction(params.id, session.userId)
+    const result = await deleteRecurringTransaction(params.id, new ObjectId(session.userId))
 
-    if (!success) {
+    if (result.deletedCount === 0) {
       return NextResponse.json({ error: "Recurring transaction not found" }, { status: 404 })
     }
 

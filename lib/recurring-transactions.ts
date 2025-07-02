@@ -2,7 +2,27 @@ import clientPromise from "./mongodb"
 import type { RecurringTransaction } from "./models/recurring-transaction"
 import { ObjectId } from "mongodb"
 
-export async function getRecurringTransactions(userId: string): Promise<RecurringTransaction[]> {
+export async function addRecurringTransaction(
+  transaction: Omit<RecurringTransaction, "_id" | "createdAt" | "updatedAt">,
+) {
+  try {
+    const client = await clientPromise
+    const db = client.db("finance-tracker")
+
+    const result = await db.collection("recurring-transactions").insertOne({
+      ...transaction,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    })
+
+    return result
+  } catch (error) {
+    console.error("Error adding recurring transaction:", error)
+    throw error
+  }
+}
+
+export async function getRecurringTransactions(userId: ObjectId) {
   try {
     const client = await clientPromise
     const db = client.db("finance-tracker")
@@ -13,87 +33,55 @@ export async function getRecurringTransactions(userId: string): Promise<Recurrin
       .sort({ createdAt: -1 })
       .toArray()
 
-    return transactions as RecurringTransaction[]
+    return transactions
   } catch (error) {
     console.error("Error fetching recurring transactions:", error)
     throw error
   }
 }
 
-export async function addRecurringTransaction(
-  userId: string,
-  transaction: Omit<RecurringTransaction, "_id" | "userId" | "createdAt" | "updatedAt">,
-): Promise<RecurringTransaction> {
-  try {
-    const client = await clientPromise
-    const db = client.db("finance-tracker")
-
-    const newTransaction = {
-      ...transaction,
-      userId: new ObjectId(userId),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }
-
-    const result = await db.collection("recurring-transactions").insertOne(newTransaction)
-
-    return {
-      ...newTransaction,
-      _id: result.insertedId,
-    } as RecurringTransaction
-  } catch (error) {
-    console.error("Error adding recurring transaction:", error)
-    throw error
-  }
-}
-
-export async function deleteRecurringTransaction(id: string, userId: string): Promise<boolean> {
+export async function deleteRecurringTransaction(transactionId: string, userId: ObjectId) {
   try {
     const client = await clientPromise
     const db = client.db("finance-tracker")
 
     const result = await db.collection("recurring-transactions").deleteOne({
-      _id: new ObjectId(id),
+      _id: new ObjectId(transactionId),
       userId: new ObjectId(userId),
     })
 
-    return result.deletedCount > 0
+    return result
   } catch (error) {
     console.error("Error deleting recurring transaction:", error)
     throw error
   }
 }
 
-export async function processRecurringTransactions(userId: string): Promise<number> {
+export async function processRecurringTransactions() {
   try {
     const client = await clientPromise
     const db = client.db("finance-tracker")
 
-    // Find due transactions
+    // Find all active recurring transactions that are due
     const dueTransactions = await db
       .collection("recurring-transactions")
       .find({
-        userId: new ObjectId(userId),
         isActive: true,
         nextOccurrenceDate: { $lte: new Date() },
       })
       .toArray()
 
-    let processedCount = 0
-
     for (const transaction of dueTransactions) {
       // Create expense
-      const expense = {
-        userId: new ObjectId(userId),
+      await db.collection("expenses").insertOne({
+        userId: transaction.userId,
         amount: transaction.amount,
         category: transaction.category,
         description: `${transaction.description} (Recurring)`,
         date: new Date(),
-        bankAccountId: transaction.bankAccountId ? new ObjectId(transaction.bankAccountId) : undefined,
+        bankAccountId: transaction.bankAccountId,
         createdAt: new Date(),
-      }
-
-      await db.collection("expenses").insertOne(expense)
+      })
 
       // Update bank account balance if linked
       if (transaction.bankAccountId) {
@@ -106,9 +94,23 @@ export async function processRecurringTransactions(userId: string): Promise<numb
       }
 
       // Calculate next occurrence date
-      const nextDate = calculateNextOccurrence(transaction.nextOccurrenceDate, transaction.frequency)
+      const nextDate = new Date(transaction.nextOccurrenceDate)
+      switch (transaction.frequency) {
+        case "daily":
+          nextDate.setDate(nextDate.getDate() + 1)
+          break
+        case "weekly":
+          nextDate.setDate(nextDate.getDate() + 7)
+          break
+        case "monthly":
+          nextDate.setMonth(nextDate.getMonth() + 1)
+          break
+        case "yearly":
+          nextDate.setFullYear(nextDate.getFullYear() + 1)
+          break
+      }
 
-      // Update recurring transaction
+      // Update next occurrence date
       await db.collection("recurring-transactions").updateOne(
         { _id: transaction._id },
         {
@@ -118,34 +120,11 @@ export async function processRecurringTransactions(userId: string): Promise<numb
           },
         },
       )
-
-      processedCount++
     }
 
-    return processedCount
+    return { processed: dueTransactions.length }
   } catch (error) {
     console.error("Error processing recurring transactions:", error)
     throw error
   }
-}
-
-function calculateNextOccurrence(currentDate: Date, frequency: string): Date {
-  const nextDate = new Date(currentDate)
-
-  switch (frequency) {
-    case "daily":
-      nextDate.setDate(nextDate.getDate() + 1)
-      break
-    case "weekly":
-      nextDate.setDate(nextDate.getDate() + 7)
-      break
-    case "monthly":
-      nextDate.setMonth(nextDate.getMonth() + 1)
-      break
-    case "yearly":
-      nextDate.setFullYear(nextDate.getFullYear() + 1)
-      break
-  }
-
-  return nextDate
 }

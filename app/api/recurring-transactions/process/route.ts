@@ -23,13 +23,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Session expired" }, { status: 401 })
     }
 
-    const processedCount = await processRecurringTransactions(session.userId)
-
-    return NextResponse.json({
-      success: true,
-      processedCount,
-      message: `Processed ${processedCount} recurring transactions`,
-    })
+    const result = await processRecurringTransactions(session.userId)
+    return NextResponse.json(result)
   } catch (error) {
     console.error("Error processing recurring transactions:", error)
     return NextResponse.json({ error: "Failed to process recurring transactions" }, { status: 500 })

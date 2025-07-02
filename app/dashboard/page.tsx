@@ -1,86 +1,162 @@
 "use client"
 
-import { ExpenseStats } from "@/components/expense-stats"
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { startOfMonth, endOfMonth } from "date-fns"
+import { useAuth } from "@/lib/auth-context"
+import { useExpenses } from "@/hooks/use-expenses"
+import { Header } from "@/components/header"
 import { ExpenseList } from "@/components/expense-list"
-import { BudgetOverview } from "@/components/budget-overview"
+import { ExpenseStats } from "@/components/expense-stats"
+import { DateRangePicker } from "@/components/date-range-picker"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Toaster } from "@/components/ui/toaster"
+import { useLoans } from "@/hooks/use-loans"
 import { LoanList } from "@/components/loan-list"
+import Link from "next/link"
+import { BarChart3 } from "lucide-react"
+import { BudgetOverview } from "@/components/budget-overview"
 import { BankAccountList } from "@/components/bank-account-list"
 import { SavingsGoalOverview } from "@/components/savings-goal-overview"
-import { DateRangePicker } from "@/components/date-range-picker"
-import { ExportButton } from "@/components/export-button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useState } from "react"
 
-export default function DashboardPage() {
-  const [dateRange, setDateRange] = useState<{
-    from: Date | undefined
-    to: Date | undefined
-  }>({
-    from: undefined,
-    to: undefined,
-  })
+export default function Dashboard() {
+  const { user, isLoading: authLoading } = useAuth()
+  const [mounted, setMounted] = useState(false)
+  const [startDate, setStartDate] = useState<Date>()
+  const [endDate, setEndDate] = useState<Date>()
+  const router = useRouter()
+
+  // Initialize dates after component mounts to prevent hydration issues
+  useEffect(() => {
+    setMounted(true)
+    const now = new Date()
+    setStartDate(startOfMonth(now))
+    setEndDate(endOfMonth(now))
+  }, [])
+
+  const { expenses, loading, error, deleteExpense } = useExpenses(startDate, endDate)
+  const { loans, loading: loansLoading, error: loansError, deleteLoan, addLoanPayment } = useLoans()
+
+  const handleDateChange = (newStartDate: Date, newEndDate: Date) => {
+    setStartDate(newStartDate)
+    setEndDate(newEndDate)
+  }
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push("/login")
+    }
+  }, [authLoading, user, router])
+
+  // Show loading state until component is mounted and auth is resolved
+  if (!mounted || authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="p-8">
+          <CardContent className="text-center">
+            <div className="text-xl font-bold">Loading...</div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return null
+  }
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">Overview of your financial data</p>
-        </div>
-        <div className="flex items-center gap-4">
-          <DateRangePicker dateRange={dateRange} onDateRangeChange={setDateRange} />
-          <ExportButton startDate={dateRange.from} endDate={dateRange.to} />
-        </div>
-      </div>
+    <div className="min-h-screen bg-background">
+      <Header />
 
-      <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="expenses">Expenses</TabsTrigger>
-          <TabsTrigger value="budgets">Budgets</TabsTrigger>
-          <TabsTrigger value="loans">Loans</TabsTrigger>
-          <TabsTrigger value="accounts">Accounts</TabsTrigger>
-          <TabsTrigger value="savings">Savings</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview" className="space-y-6">
-          <ExpenseStats startDate={dateRange.from} endDate={dateRange.to} />
-          <div className="grid gap-6 lg:grid-cols-2">
-            <BudgetOverview />
-            <SavingsGoalOverview />
+      <main className="container mx-auto py-6 px-4 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="space-y-2">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight">Personal Finance Overview</h1>
+            <p className="text-muted-foreground">Your current financial snapshot</p>
           </div>
-        </TabsContent>
+          <Link href="/insights">
+            <Button className="w-full sm:w-auto">
+              <BarChart3 className="h-4 w-4 mr-2" />
+              View Insights
+            </Button>
+          </Link>
+        </div>
 
-        <TabsContent value="expenses" className="space-y-6">
-          <ExpenseStats startDate={dateRange.from} endDate={dateRange.to} />
-          <ExpenseList startDate={dateRange.from} endDate={dateRange.to} />
-        </TabsContent>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Main Content - Expenses and Loans */}
+          <div className="lg:col-span-8 space-y-6">
+            {/* Expenses List */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Expenses</CardTitle>
+                <CardDescription>Your latest spending records</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {startDate && endDate && (
+                  <DateRangePicker startDate={startDate} endDate={endDate} onDateChange={handleDateChange} />
+                )}
+                {loading ? (
+                  <div className="text-center py-8 text-muted-foreground">Loading expenses...</div>
+                ) : error ? (
+                  <div className="text-center py-8 text-destructive">{error}</div>
+                ) : (
+                  <ExpenseList expenses={expenses} onDelete={deleteExpense} startDate={startDate} endDate={endDate} />
+                )}
+              </CardContent>
+            </Card>
 
-        <TabsContent value="budgets" className="space-y-6">
-          <BudgetOverview />
-        </TabsContent>
+            {/* Loan List */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Your Loans</CardTitle>
+                <CardDescription>Overview of your active loans and payments</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loansLoading ? (
+                  <div className="text-center py-8 text-muted-foreground">Loading loans...</div>
+                ) : loansError ? (
+                  <div className="text-center py-8 text-destructive">{loansError}</div>
+                ) : (
+                  <LoanList loans={loans} onDelete={deleteLoan} onAddPayment={addLoanPayment} />
+                )}
+              </CardContent>
+            </Card>
+          </div>
 
-        <TabsContent value="loans" className="space-y-6">
-          <LoanList />
-        </TabsContent>
-
-        <TabsContent value="accounts" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Bank Accounts</CardTitle>
-              <CardDescription>Manage your bank accounts and view transaction history</CardDescription>
-            </CardHeader>
-            <CardContent>
+          {/* Sidebar - Bank Accounts, Savings Goals, Stats, and Budgets */}
+          <div className="lg:col-span-4 space-y-6 min-w-0">
+            {/* Bank Accounts */}
+            <div className="w-full">
               <BankAccountList />
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </div>
 
-        <TabsContent value="savings" className="space-y-6">
-          <SavingsGoalOverview />
-        </TabsContent>
-      </Tabs>
+            {/* Savings Goals */}
+            <div className="w-full">
+              <SavingsGoalOverview />
+            </div>
+
+            {/* Stats */}
+            <div className="w-full">
+              <ExpenseStats />
+            </div>
+
+            {/* Budget Overview */}
+            <Card className="w-full">
+              <CardHeader>
+                <CardTitle className="text-lg">Budget Overview</CardTitle>
+                <CardDescription className="text-sm">Set and track your spending limits</CardDescription>
+              </CardHeader>
+              <CardContent className="p-4">
+                <BudgetOverview />
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </main>
+
+      <Toaster />
     </div>
   )
 }
