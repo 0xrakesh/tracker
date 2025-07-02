@@ -12,6 +12,7 @@ export function getAuthUser() {
     return JSON.parse(Buffer.from(encoded, "base64url").toString()) as {
       _id: string
       email: string
+      username: string // Assuming username is also part of the user object
     }
   } catch {
     return null

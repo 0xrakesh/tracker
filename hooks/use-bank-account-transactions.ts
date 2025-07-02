@@ -3,9 +3,9 @@
 import { useState, useEffect, useCallback } from "react"
 import type { Expense } from "@/lib/models/expense"
 
-export function useBankAccountTransactions(bankAccountId: string | null) {
+export function useBankAccountTransactions(bankAccountId: string) {
   const [transactions, setTransactions] = useState<Expense[]>([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const fetchTransactions = useCallback(async () => {

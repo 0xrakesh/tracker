@@ -1,13 +1,12 @@
 "use client"
 
-import * as React from "react"
-import type { ColumnDef } from "@tanstack/react-table"
-import { format } from "date-fns"
-import { Trash2, Repeat } from "lucide-react"
-
+import { useState } from "react"
+import { Trash2, Repeat, CalendarDays } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { DataTable } from "@/components/data-table"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { useRecurringTransactions } from "@/hooks/use-recurring-transactions"
+import { useVisibility } from "@/lib/visibility-context"
+import { format } from "date-fns"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,33 +19,26 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { toast } from "@/components/ui/use-toast"
-import { Card, CardContent } from "@/components/ui/card"
+import { DataTable } from "./data-table"
+import type { ColumnDef } from "@tanstack/react-table"
+import type { RecurringTransaction } from "@/lib/models/recurring-transaction"
 
-interface RecurringTransactionWithAccount {
-  _id: string
-  name: string
-  amount: number
-  category: string
-  frequency: "daily" | "weekly" | "monthly" | "quarterly" | "yearly"
-  startDate: Date
-  nextOccurrenceDate: Date
-  bankAccountId?: string
+interface RecurringTransactionWithAccount extends RecurringTransaction {
   bankAccountName?: string
-  notes?: string
-  createdAt: Date
 }
 
 export function RecurringTransactionList() {
-  const { recurringTransactions, loading, error, deleteRecurringTransaction, processDueTransactions } =
+  const { recurringTransactions, loading, error, deleteRecurringTransaction, processRecurringTransactionsManually } =
     useRecurringTransactions()
-  const [isProcessing, setIsProcessing] = React.useState(false)
+  const { showAmounts } = useVisibility()
+  const [isProcessing, setIsProcessing] = useState(false)
 
   const handleDelete = async (id: string) => {
     const success = await deleteRecurringTransaction(id)
     if (success) {
       toast({
-        title: "Transaction Deleted",
-        description: "Recurring transaction has been successfully deleted.",
+        title: "Recurring Transaction Deleted",
+        description: "The recurring transaction has been successfully deleted.",
       })
     } else {
       toast({
@@ -57,30 +49,26 @@ export function RecurringTransactionList() {
     }
   }
 
-  const handleProcessDue = async () => {
+  const handleProcessTransactions = async () => {
     setIsProcessing(true)
-    try {
-      const processedCount = await processDueTransactions()
-      if (processedCount > 0) {
-        toast({
-          title: "Transactions Processed",
-          description: `Successfully processed ${processedCount} due recurring transactions.`,
-        })
-      } else {
-        toast({
-          title: "No Due Transactions",
-          description: "No recurring transactions were due for processing.",
-        })
-      }
-    } catch (err) {
+    const success = await processRecurringTransactionsManually()
+    if (success) {
+      toast({
+        title: "Transactions Processed",
+        description: "Due recurring transactions have been generated.",
+      })
+    } else {
       toast({
         title: "Processing Failed",
-        description: "An error occurred while processing recurring transactions.",
+        description: "There was an error processing recurring transactions.",
         variant: "destructive",
       })
-    } finally {
-      setIsProcessing(false)
     }
+    setIsProcessing(false)
+  }
+
+  const formatAmount = (amount: number) => {
+    return showAmounts ? `₹${amount.toFixed(2)}` : "₹****.**"
   }
 
   const columns: ColumnDef<RecurringTransactionWithAccount>[] = [
@@ -94,11 +82,7 @@ export function RecurringTransactionList() {
       header: () => <div className="text-right">Amount</div>,
       cell: ({ row }) => {
         const amount = Number.parseFloat(row.getValue("amount"))
-        const formatted = new Intl.NumberFormat("en-IN", {
-          style: "currency",
-          currency: "INR",
-        }).format(amount)
-        return <div className="text-right font-medium">{formatted}</div>
+        return <div className="text-right font-medium">{formatAmount(amount)}</div>
       },
     },
     {
@@ -114,14 +98,18 @@ export function RecurringTransactionList() {
       accessorKey: "nextOccurrenceDate",
       header: "Next Due",
       cell: ({ row }) => {
-        const date = row.getValue("nextOccurrenceDate") as Date
-        return format(new Date(date), "PPP")
+        const date = new Date(row.getValue("nextOccurrenceDate"))
+        return (
+          <div className="flex items-center gap-1">
+            <CalendarDays className="h-3 w-3" />
+            {format(date, "MMM d, yyyy")}
+          </div>
+        )
       },
     },
     {
       accessorKey: "bankAccountName",
       header: "Bank Account",
-      cell: ({ row }) => <div>{row.getValue("bankAccountName") || "N/A"}</div>,
     },
     {
       id: "actions",
@@ -130,26 +118,30 @@ export function RecurringTransactionList() {
         const transaction = row.original
 
         return (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <Trash2 className="h-4 w-4" />
-                <span className="sr-only">Delete transaction</span>
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This action cannot be undone. This will permanently delete your recurring transaction.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => handleDelete(transaction._id)}>Delete</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          <div className="flex justify-end gap-2">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8" title="Delete Recurring Transaction">
+                  <Trash2 className="h-4 w-4" />
+                  <span className="sr-only">Delete transaction</span>
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete this recurring transaction.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => handleDelete(transaction._id?.toString() || "")}>
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         )
       },
     },
@@ -157,9 +149,12 @@ export function RecurringTransactionList() {
 
   if (loading) {
     return (
-      <Card>
-        <CardContent className="p-4 text-center">
-          <div className="text-xl font-bold">Loading recurring transactions...</div>
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle className="text-lg">Recurring Transactions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8 text-muted-foreground">Loading recurring transactions...</div>
         </CardContent>
       </Card>
     )
@@ -167,26 +162,44 @@ export function RecurringTransactionList() {
 
   if (error) {
     return (
-      <Card>
-        <CardContent className="p-4 text-center text-red-500">
-          <div className="text-xl font-bold">Error: {error}</div>
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle className="text-lg">Recurring Transactions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8 text-destructive text-sm">{error}</div>
         </CardContent>
       </Card>
     )
   }
 
   return (
-    <div className="space-y-4">
-      <Button onClick={handleProcessDue} disabled={isProcessing} className="w-full md:w-auto">
-        <Repeat className="h-4 w-4 mr-2" />
-        {isProcessing ? "Processing..." : "Process Due Transactions"}
-      </Button>
-      <DataTable
-        columns={columns}
-        data={recurringTransactions}
-        filterColumnId="name"
-        filterPlaceholder="Filter by name..."
-      />
-    </div>
+    <Card className="w-full">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <div>
+          <CardTitle className="text-lg">Recurring Transactions</CardTitle>
+          <CardDescription className="text-sm">Manage your automated expenses.</CardDescription>
+        </div>
+        <Button onClick={handleProcessTransactions} disabled={isProcessing} size="sm">
+          <Repeat className="h-4 w-4 mr-2" />
+          {isProcessing ? "Processing..." : "Process Now"}
+        </Button>
+      </CardHeader>
+      <CardContent className="p-4">
+        {recurringTransactions.length === 0 ? (
+          <div className="text-center py-4 text-muted-foreground">
+            <p>No recurring transactions set up yet.</p>
+            <p className="text-sm mt-1">Add one to automate your expense tracking.</p>
+          </div>
+        ) : (
+          <DataTable
+            columns={columns}
+            data={recurringTransactions}
+            filterColumnId="name"
+            filterPlaceholder="Filter by name..."
+          />
+        )}
+      </CardContent>
+    </Card>
   )
 }

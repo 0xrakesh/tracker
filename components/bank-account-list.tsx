@@ -28,9 +28,11 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { BankAccountTransactionsList } from "./bank-account-transactions-list"
+import { useVisibility } from "@/lib/visibility-context"
 
 export function BankAccountList() {
   const { bankAccounts, loading, error, deleteBankAccount } = useBankAccounts()
+  const { showAmounts } = useVisibility()
 
   const handleDelete = async (id: string) => {
     const success = await deleteBankAccount(id)
@@ -48,6 +50,10 @@ export function BankAccountList() {
     }
   }
 
+  const formatAmount = (amount: number) => {
+    return showAmounts ? `₹${amount.toFixed(2)}` : "₹****.**"
+  }
+
   const columns: ColumnDef<BankAccount>[] = [
     {
       accessorKey: "bankName",
@@ -63,11 +69,7 @@ export function BankAccountList() {
       header: () => <div className="text-right">Current Balance</div>,
       cell: ({ row }) => {
         const amount = Number.parseFloat(row.getValue("currentBalance"))
-        const formatted = new Intl.NumberFormat("en-IN", {
-          style: "currency",
-          currency: "INR",
-        }).format(amount)
-        return <div className="text-right font-medium">{formatted}</div>
+        return <div className="text-right font-medium">{formatAmount(amount)}</div>
       },
     },
     {

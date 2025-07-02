@@ -19,27 +19,24 @@ export function useRecurringTransactions() {
     try {
       const [transactionsResponse, accountsResponse] = await Promise.all([
         fetch("/api/recurring-transactions"),
-        fetch("/api/bank-accounts"), // Fetch bank accounts to link names
+        fetch("/api/bank-accounts"),
       ])
 
       if (!transactionsResponse.ok || !accountsResponse.ok) {
         throw new Error("Failed to fetch recurring transactions or bank accounts")
       }
 
-      const transactionsData = await transactionsResponse.json()
-      const accountsData = await accountsResponse.json()
+      const transactionsData: RecurringTransaction[] = await transactionsResponse.json()
+      const accountsData: BankAccount[] = await accountsResponse.json()
 
-      const transactionsWithAccountNames = transactionsData.map((transaction: RecurringTransaction) => {
-        const linkedAccount = transaction.bankAccountId
-          ? accountsData.find((acc: BankAccount) => acc._id?.toString() === transaction.bankAccountId?.toString())
-          : undefined
+      const transactionsWithAccount = transactionsData.map((transaction) => {
+        const linkedAccount = accountsData.find((acc) => acc._id?.toString() === transaction.bankAccountId?.toString())
         return {
           ...transaction,
-          bankAccountName: linkedAccount ? `${linkedAccount.bankName} (${linkedAccount.accountName})` : undefined,
+          bankAccountName: linkedAccount ? `${linkedAccount.bankName} (${linkedAccount.accountName})` : "N/A",
         }
       })
-
-      setRecurringTransactions(transactionsWithAccountNames)
+      setRecurringTransactions(transactionsWithAccount)
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred")
     } finally {
@@ -48,10 +45,7 @@ export function useRecurringTransactions() {
   }, [])
 
   const addRecurringTransaction = async (
-    transaction: Omit<RecurringTransaction, "_id" | "userId" | "createdAt" | "type" | "nextOccurrenceDate"> & {
-      type: "expense"
-      nextOccurrenceDate: Date
-    },
+    transaction: Omit<RecurringTransaction, "_id" | "userId" | "createdAt" | "lastGeneratedDate">,
   ) => {
     try {
       const response = await fetch("/api/recurring-transactions", {
@@ -93,7 +87,7 @@ export function useRecurringTransactions() {
     }
   }
 
-  const processDueTransactions = async () => {
+  const processRecurringTransactionsManually = async () => {
     setLoading(true)
     setError(null)
     try {
@@ -103,19 +97,17 @@ export function useRecurringTransactions() {
           "Content-Type": "application/json",
         },
       })
-
       if (!response.ok) {
         const errorData = await response.json()
         throw new Error(errorData.error || "Failed to process recurring transactions")
       }
-      const data = await response.json()
-      return data.processedCount
+      await fetchRecurringTransactions() // Re-fetch to update list
+      return true
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred")
-      return 0
+      return false
     } finally {
       setLoading(false)
-      await fetchRecurringTransactions() // Re-fetch after processing
     }
   }
 
@@ -130,6 +122,6 @@ export function useRecurringTransactions() {
     fetchRecurringTransactions,
     addRecurringTransaction,
     deleteRecurringTransaction,
-    processDueTransactions,
+    processRecurringTransactionsManually,
   }
 }

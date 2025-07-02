@@ -4,13 +4,13 @@ import { deleteRecurringTransaction } from "@/lib/recurring-transactions"
 
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
   try {
-    const user = await getAuthUser()
+    const user = getAuthUser()
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     const { id } = params
-    const success = await deleteRecurringTransaction(user._id.toString(), id)
+    const success = await deleteRecurringTransaction(user._id, id)
 
     if (!success) {
       return NextResponse.json({ error: "Recurring transaction not found or not authorized" }, { status: 404 })

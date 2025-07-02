@@ -1,5 +1,5 @@
-import type { Document, Model } from "mongoose"
-import { Schema, Types, model, models } from "mongoose"
+import mongoose, { Schema, type Document, type Model } from "mongoose"
+import type { Types } from "mongoose"
 
 export interface BankAccount extends Document {
   userId: Types.ObjectId
@@ -10,19 +10,16 @@ export interface BankAccount extends Document {
   createdAt: Date
 }
 
-const BankAccountSchema = new Schema<BankAccount>(
-  {
-    userId: { type: Types.ObjectId, required: true, ref: "User" },
-    bankName: { type: String, required: true },
-    accountName: { type: String, required: true },
-    initialBalance: { type: Number, required: true },
-    currentBalance: { type: Number, required: true },
-    createdAt: { type: Date, default: Date.now },
-  },
-  { timestamps: false },
-)
+const BankAccountSchema: Schema = new Schema({
+  userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+  bankName: { type: String, required: true },
+  accountName: { type: String, required: true },
+  initialBalance: { type: Number, required: true },
+  currentBalance: { type: Number, required: true }, // This will be updated as expenses are added/deleted
+  createdAt: { type: Date, default: Date.now },
+})
 
 const BankAccountModel: Model<BankAccount> =
-  (models.BankAccount as Model<BankAccount>) || model<BankAccount>("BankAccount", BankAccountSchema)
+  mongoose.models.BankAccount || mongoose.model<BankAccount>("BankAccount", BankAccountSchema)
 
 export default BankAccountModel
