@@ -1,24 +1,9 @@
 "use client"
-import type { ColumnDef } from "@tanstack/react-table"
-import { Trash2, Eye } from "lucide-react"
 
+import { useState } from "react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { DataTable } from "@/components/data-table"
-import { useBankAccounts } from "@/hooks/use-bank-accounts"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { toast } from "@/components/ui/use-toast"
-import { Card, CardContent } from "@/components/ui/card"
-import type { BankAccount } from "@/lib/models/bank-account"
+import { Badge } from "@/components/ui/badge"
 import {
   Dialog,
   DialogContent,
@@ -27,135 +12,94 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { BankAccountTransactionsList } from "./bank-account-transactions-list"
+import { Eye, Trash2 } from "lucide-react"
+import { useBankAccounts } from "@/hooks/use-bank-accounts"
 import { useVisibility } from "@/lib/visibility-context"
+import { BankAccountTransactionsList } from "./bank-account-transactions-list"
 
 export function BankAccountList() {
-  const { bankAccounts, loading, error, deleteBankAccount } = useBankAccounts()
+  const { bankAccounts, loading, deleteBankAccount } = useBankAccounts()
   const { showAmounts } = useVisibility()
+  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null)
 
   const handleDelete = async (id: string) => {
-    const success = await deleteBankAccount(id)
-    if (success) {
-      toast({
-        title: "Bank Account Deleted",
-        description: "Bank account has been successfully deleted.",
-      })
-    } else {
-      toast({
-        title: "Failed to Delete",
-        description: "There was an error deleting the bank account.",
-        variant: "destructive",
-      })
+    if (confirm("Are you sure you want to delete this bank account?")) {
+      await deleteBankAccount(id)
     }
   }
 
-  const formatAmount = (amount: number) => {
-    return showAmounts ? `₹${amount.toFixed(2)}` : "₹****.**"
-  }
-
-  const columns: ColumnDef<BankAccount>[] = [
-    {
-      accessorKey: "bankName",
-      header: "Bank Name",
-      cell: ({ row }) => <div className="font-medium">{row.getValue("bankName")}</div>,
-    },
-    {
-      accessorKey: "accountName",
-      header: "Account Name",
-    },
-    {
-      accessorKey: "currentBalance",
-      header: () => <div className="text-right">Current Balance</div>,
-      cell: ({ row }) => {
-        const amount = Number.parseFloat(row.getValue("currentBalance"))
-        return <div className="text-right font-medium">{formatAmount(amount)}</div>
-      },
-    },
-    {
-      id: "actions",
-      enableHiding: false,
-      cell: ({ row }) => {
-        const account = row.original
-
-        return (
-          <div className="flex justify-end gap-2">
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8" title="View Transactions">
-                  <Eye className="h-4 w-4" />
-                  <span className="sr-only">View Transactions</span>
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>
-                    Transactions for {account.bankName} ({account.accountName})
-                  </DialogTitle>
-                  <DialogDescription>A list of all expenses associated with this bank account.</DialogDescription>
-                </DialogHeader>
-                <BankAccountTransactionsList
-                  bankAccountId={account._id?.toString() || ""}
-                  bankAccountName={`${account.bankName} (${account.accountName})`}
-                />
-              </DialogContent>
-            </Dialog>
-
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8" title="Delete Account">
-                  <Trash2 className="h-4 w-4" />
-                  <span className="sr-only">Delete account</span>
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete your bank account and all associated
-                    expenses will no longer be linked to it.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => handleDelete(account._id?.toString() || "")}>
-                    Delete
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
-        )
-      },
-    },
-  ]
-
   if (loading) {
-    return (
-      <Card>
-        <CardContent className="p-4 text-center">
-          <div className="text-xl font-bold">Loading bank accounts...</div>
-        </CardContent>
-      </Card>
-    )
+    return <div className="text-center py-8">Loading bank accounts...</div>
   }
 
-  if (error) {
+  if (bankAccounts.length === 0) {
     return (
       <Card>
-        <CardContent className="p-4 text-center text-red-500">
-          <div className="text-xl font-bold">Error: {error}</div>
+        <CardContent className="text-center py-8">
+          <p className="text-muted-foreground">No bank accounts found. Add your first bank account to get started.</p>
         </CardContent>
       </Card>
     )
   }
 
   return (
-    <DataTable
-      columns={columns}
-      data={bankAccounts}
-      filterColumnId="bankName"
-      filterPlaceholder="Filter by bank name..."
-    />
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {bankAccounts.map((account) => (
+        <Card key={account._id?.toString()}>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg">{account.bankName}</CardTitle>
+              <div className="flex items-center gap-2">
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSelectedAccountId(account._id?.toString() || "")}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-4xl">
+                    <DialogHeader>
+                      <DialogTitle>
+                        {account.bankName} - {account.accountName} Transactions
+                      </DialogTitle>
+                      <DialogDescription>View all transactions for this bank account</DialogDescription>
+                    </DialogHeader>
+                    {selectedAccountId && <BankAccountTransactionsList bankAccountId={selectedAccountId} />}
+                  </DialogContent>
+                </Dialog>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDelete(account._id?.toString() || "")}
+                  className="text-red-600 hover:text-red-700"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            <CardDescription>{account.accountName}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">Current Balance</span>
+                <Badge variant={account.currentBalance >= 0 ? "default" : "destructive"}>
+                  {showAmounts ? `₹${account.currentBalance.toFixed(2)}` : "••••••"}
+                </Badge>
+              </div>
+              {account.accountNumber && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Account Number</span>
+                  <span className="text-sm font-mono">{showAmounts ? account.accountNumber : "••••••••"}</span>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
   )
 }

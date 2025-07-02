@@ -1,144 +1,90 @@
 "use client"
 
+import type React from "react"
+
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
-import { format } from "date-fns"
-import { CalendarIcon } from "lucide-react"
-
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { toast } from "@/components/ui/use-toast"
-import { cn } from "@/lib/utils"
+import { Textarea } from "@/components/ui/textarea"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useRecurringTransactions } from "@/hooks/use-recurring-transactions"
 import { useBankAccounts } from "@/hooks/use-bank-accounts"
-
-const formSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  amount: z.coerce.number().min(0.01, "Amount must be positive"),
-  category: z.string().min(1, "Category is required"),
-  bankAccountId: z.string().optional(),
-  frequency: z.enum(["daily", "weekly", "monthly", "quarterly", "yearly"]),
-  startDate: z.date({ required_error: "Start date is required" }),
-  description: z.string().optional(),
-})
+import { categories } from "@/lib/models/expense"
 
 export function RecurringTransactionForm() {
   const router = useRouter()
-  const { addRecurringTransaction } = useRecurringTransactions()
-  const { bankAccounts, loading: accountsLoading } = useBankAccounts()
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const { addTransaction } = useRecurringTransactions()
+  const { bankAccounts } = useBankAccounts()
+  const [loading, setLoading] = useState(false)
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: "",
-      amount: 0,
-      category: "Food", // Updated default value to be a non-empty string
-      bankAccountId: "",
-      frequency: "monthly",
-      startDate: new Date(),
-      description: "",
-    },
+  const [formData, setFormData] = useState({
+    amount: "",
+    category: "defaultCategory", // Updated default value
+    description: "",
+    frequency: "daily", // Updated default value
+    nextOccurrenceDate: "",
+    bankAccountId: "", // Updated default value
   })
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
-    setIsSubmitting(true)
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+
     try {
-      const success = await addRecurringTransaction({
-        ...values,
-        nextOccurrenceDate: values.startDate, // Initial next occurrence is the start date
+      const success = await addTransaction({
+        amount: Number.parseFloat(formData.amount),
+        category: formData.category,
+        description: formData.description,
+        frequency: formData.frequency as "daily" | "weekly" | "monthly" | "yearly",
+        nextOccurrenceDate: new Date(formData.nextOccurrenceDate),
+        bankAccountId: formData.bankAccountId || undefined,
+        isActive: true,
       })
 
       if (success) {
-        toast({
-          title: "Recurring Transaction Added",
-          description: "Your recurring transaction has been successfully added.",
-        })
         router.push("/dashboard/recurring-transactions")
-      } else {
-        toast({
-          title: "Failed to Add Recurring Transaction",
-          description: "There was an error adding your recurring transaction.",
-          variant: "destructive",
-        })
       }
     } catch (error) {
-      console.error("Error submitting recurring transaction:", error)
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred.",
-        variant: "destructive",
-      })
+      console.error("Error adding recurring transaction:", error)
     } finally {
-      setIsSubmitting(false)
+      setLoading(false)
     }
   }
 
-  const categories = [
-    "Food",
-    "Transport",
-    "Utilities",
-    "Rent",
-    "Shopping",
-    "Entertainment",
-    "Health",
-    "Education",
-    "Salary",
-    "Freelance",
-    "Investments",
-    "Other",
-  ]
-
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Transaction Name</FormLabel>
-              <FormControl>
-                <Input placeholder="e.g., Monthly Rent" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+    <Card className="w-full max-w-2xl mx-auto">
+      <CardHeader>
+        <CardTitle>Add Recurring Transaction</CardTitle>
+        <CardDescription>Set up a transaction that repeats automatically</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="amount">Amount</Label>
+              <Input
+                id="amount"
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                value={formData.amount}
+                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                required
+              />
+            </div>
 
-        <FormField
-          control={form.control}
-          name="amount"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Amount</FormLabel>
-              <FormControl>
-                <Input type="number" step="0.01" placeholder="0.00" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="category"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Category</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a category" />
-                  </SelectTrigger>
-                </FormControl>
+            <div className="space-y-2">
+              <Label htmlFor="category">Category</Label>
+              <Select
+                value={formData.category}
+                onValueChange={(value) => setFormData({ ...formData, category: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
                 <SelectContent>
                   {categories.map((category) => (
                     <SelectItem key={category} value={category}>
@@ -147,115 +93,81 @@ export function RecurringTransactionForm() {
                   ))}
                 </SelectContent>
               </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+            </div>
+          </div>
 
-        <FormField
-          control={form.control}
-          name="bankAccountId"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Bank Account (Optional)</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger disabled={accountsLoading}>
-                    <SelectValue placeholder="Select a bank account" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {bankAccounts.length === 0 ? (
-                    <SelectItem value="" disabled>
-                      No bank accounts available
-                    </SelectItem>
-                  ) : (
-                    <>
-                      <SelectItem value="none">None</SelectItem> // Updated value to be a non-empty string
-                      {bankAccounts.map((account) => (
-                        <SelectItem key={account._id?.toString()} value={account._id?.toString() || "none"}>
-                          {account.bankName} ({account.accountName})
-                        </SelectItem>
-                      ))}
-                    </>
-                  )}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              placeholder="Enter description"
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              required
+            />
+          </div>
 
-        <FormField
-          control={form.control}
-          name="frequency"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Frequency</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select frequency" />
-                  </SelectTrigger>
-                </FormControl>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="frequency">Frequency</Label>
+              <Select
+                value={formData.frequency}
+                onValueChange={(value) => setFormData({ ...formData, frequency: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select frequency" />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="daily">Daily</SelectItem>
                   <SelectItem value="weekly">Weekly</SelectItem>
                   <SelectItem value="monthly">Monthly</SelectItem>
-                  <SelectItem value="quarterly">Quarterly</SelectItem>
                   <SelectItem value="yearly">Yearly</SelectItem>
                 </SelectContent>
               </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+            </div>
 
-        <FormField
-          control={form.control}
-          name="startDate"
-          render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <FormLabel>Start Date</FormLabel>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button
-                      variant={"outline"}
-                      className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
-                    >
-                      {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                    </Button>
-                  </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
-                </PopoverContent>
-              </Popover>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+            <div className="space-y-2">
+              <Label htmlFor="nextOccurrenceDate">Next Occurrence Date</Label>
+              <Input
+                id="nextOccurrenceDate"
+                type="date"
+                value={formData.nextOccurrenceDate}
+                onChange={(e) => setFormData({ ...formData, nextOccurrenceDate: e.target.value })}
+                required
+              />
+            </div>
+          </div>
 
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description (Optional)</FormLabel>
-              <FormControl>
-                <Input placeholder="e.g., Electricity bill" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          <div className="space-y-2">
+            <Label htmlFor="bankAccount">Bank Account (Optional)</Label>
+            <Select
+              value={formData.bankAccountId}
+              onValueChange={(value) => setFormData({ ...formData, bankAccountId: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select bank account" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">No bank account</SelectItem> {/* Updated value prop */}
+                {bankAccounts.map((account) => (
+                  <SelectItem key={account._id?.toString()} value={account._id?.toString() || "none"}>
+                    {account.bankName} - {account.accountName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-        <Button type="submit" className="w-full" disabled={isSubmitting}>
-          {isSubmitting ? "Adding..." : "Add Recurring Transaction"}
-        </Button>
-      </form>
-    </Form>
+          <div className="flex gap-4">
+            <Button type="submit" disabled={loading}>
+              {loading ? "Adding..." : "Add Recurring Transaction"}
+            </Button>
+            <Button type="button" variant="outline" onClick={() => router.back()}>
+              Cancel
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   )
 }

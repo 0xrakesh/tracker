@@ -18,7 +18,7 @@ export function useBankAccountTransactions(bankAccountId: string | null) {
       const response = await fetch(`/api/bank-accounts/${bankAccountId}/transactions`)
 
       if (!response.ok) {
-        throw new Error("Failed to fetch transactions")
+        throw new Error("Failed to fetch bank account transactions")
       }
 
       const data = await response.json()
@@ -31,15 +31,13 @@ export function useBankAccountTransactions(bankAccountId: string | null) {
   }
 
   useEffect(() => {
-    if (bankAccountId) {
-      fetchTransactions()
-    }
+    fetchTransactions()
   }, [bankAccountId])
 
   return {
     transactions,
     loading,
     error,
-    fetchTransactions,
+    refetch: fetchTransactions,
   }
 }

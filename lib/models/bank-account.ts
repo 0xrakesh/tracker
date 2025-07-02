@@ -6,7 +6,8 @@ export interface BankAccount {
   userId: ObjectId
   bankName: string
   accountName: string
-  balance: number
+  accountNumber?: string
+  currentBalance: number
   createdAt?: Date
   updatedAt?: Date
 }
@@ -28,7 +29,11 @@ const bankAccountSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
-    balance: {
+    accountNumber: {
+      type: String,
+      trim: true,
+    },
+    currentBalance: {
       type: Number,
       required: true,
       default: 0,

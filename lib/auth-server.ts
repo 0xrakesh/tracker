@@ -1,7 +1,14 @@
 import { cookies } from "next/headers"
 import clientPromise from "./mongodb"
+import { ObjectId } from "mongodb"
 
-export async function getAuthUser() {
+export interface User {
+  _id: ObjectId
+  username: string
+  email: string
+}
+
+export async function getAuthUser(): Promise<User | null> {
   try {
     const sessionId = cookies().get("session")?.value
 
@@ -24,7 +31,7 @@ export async function getAuthUser() {
 
     // Find user
     const user = await db.collection("users").findOne({
-      _id: session.userId,
+      _id: new ObjectId(session.userId),
     })
 
     if (!user) {
@@ -32,7 +39,7 @@ export async function getAuthUser() {
     }
 
     return {
-      id: user._id.toString(),
+      _id: user._id,
       username: user.username,
       email: user.email,
     }

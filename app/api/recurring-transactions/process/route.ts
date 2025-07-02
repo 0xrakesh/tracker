@@ -24,8 +24,10 @@ export async function POST(req: NextRequest) {
     }
 
     const processedCount = await processRecurringTransactions(session.userId)
+
     return NextResponse.json({
       success: true,
+      processedCount,
       message: `Processed ${processedCount} recurring transactions`,
     })
   } catch (error) {

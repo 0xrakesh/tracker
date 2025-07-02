@@ -23,7 +23,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
       return NextResponse.json({ error: "Session expired" }, { status: 401 })
     }
 
-    const success = await deleteRecurringTransaction(session.userId, params.id)
+    const success = await deleteRecurringTransaction(params.id, session.userId)
 
     if (!success) {
       return NextResponse.json({ error: "Recurring transaction not found" }, { status: 404 })
