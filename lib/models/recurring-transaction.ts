@@ -1,37 +1,67 @@
-import mongoose, { Schema, type Document, type Model } from "mongoose"
-import type { Types } from "mongoose"
+import mongoose from "mongoose"
+import type { ObjectId } from "mongodb"
 
-export interface RecurringTransaction extends Document {
-  userId: Types.ObjectId
+export interface RecurringTransaction {
+  _id?: ObjectId
+  userId: ObjectId
   amount: number
   category: string
   description: string
   frequency: "daily" | "weekly" | "monthly" | "yearly"
   nextOccurrenceDate: Date
-  bankAccountId?: Types.ObjectId
+  bankAccountId?: ObjectId
   isActive: boolean
-  createdAt: Date
+  createdAt?: Date
+  updatedAt?: Date
 }
 
-const RecurringTransactionSchema: Schema = new Schema({
-  userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
-  amount: { type: Number, required: true },
-  category: { type: String, required: true },
-  description: { type: String, required: true },
-  frequency: {
-    type: String,
-    required: true,
-    enum: ["daily", "weekly", "monthly", "yearly"],
+const recurringTransactionSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+      ref: "User",
+    },
+    amount: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    category: {
+      type: String,
+      required: true,
+    },
+    description: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    frequency: {
+      type: String,
+      required: true,
+      enum: ["daily", "weekly", "monthly", "yearly"],
+    },
+    nextOccurrenceDate: {
+      type: Date,
+      required: true,
+    },
+    bankAccountId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "BankAccount",
+      required: false,
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
   },
-  nextOccurrenceDate: { type: Date, required: true },
-  bankAccountId: { type: Schema.Types.ObjectId, ref: "BankAccount" },
-  isActive: { type: Boolean, default: true },
-  createdAt: { type: Date, default: Date.now },
-})
+  {
+    timestamps: true,
+  },
+)
 
-// Prevent re-compilation error in development
-const RecurringTransactionModel: Model<RecurringTransaction> =
-  mongoose.models?.RecurringTransaction ||
-  mongoose.model<RecurringTransaction>("RecurringTransaction", RecurringTransactionSchema)
+// Prevent re-compilation error
+const RecurringTransactionModel =
+  mongoose.models?.RecurringTransaction || mongoose.model("RecurringTransaction", recurringTransactionSchema)
 
 export default RecurringTransactionModel

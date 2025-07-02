@@ -1,24 +1,45 @@
-import mongoose, { Schema, type Document, type Model } from "mongoose"
-import type { Types } from "mongoose"
+import mongoose from "mongoose"
+import type { ObjectId } from "mongodb"
 
-export interface BankAccount extends Document {
-  userId: Types.ObjectId
+export interface BankAccount {
+  _id?: ObjectId
+  userId: ObjectId
   bankName: string
   accountName: string
-  currentBalance: number
-  createdAt: Date
+  balance: number
+  createdAt?: Date
+  updatedAt?: Date
 }
 
-const BankAccountSchema: Schema = new Schema({
-  userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
-  bankName: { type: String, required: true },
-  accountName: { type: String, required: true },
-  currentBalance: { type: Number, required: true, default: 0 },
-  createdAt: { type: Date, default: Date.now },
-})
+const bankAccountSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+      ref: "User",
+    },
+    bankName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    accountName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    balance: {
+      type: Number,
+      required: true,
+      default: 0,
+    },
+  },
+  {
+    timestamps: true,
+  },
+)
 
-// Prevent re-compilation error in development
-const BankAccountModel: Model<BankAccount> =
-  mongoose.models?.BankAccount || mongoose.model<BankAccount>("BankAccount", BankAccountSchema)
+// Prevent re-compilation error
+const BankAccountModel = mongoose.models?.BankAccount || mongoose.model("BankAccount", bankAccountSchema)
 
 export default BankAccountModel

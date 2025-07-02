@@ -1,41 +1,73 @@
-import mongoose, { Schema, type Document, type Model } from "mongoose"
-import type { Types } from "mongoose"
+import mongoose from "mongoose"
+import type { ObjectId } from "mongodb"
 
-export interface Expense extends Document {
-  userId: Types.ObjectId
+export interface Expense {
+  _id?: ObjectId
+  userId: ObjectId
   amount: number
   category: string
+  description: string
   date: Date
-  description?: string
-  bankAccountId?: Types.ObjectId
-  createdAt: Date
+  bankAccountId?: ObjectId
+  createdAt?: Date
 }
 
-// Export the categories as a named export
 export const categories = [
-  "Food",
+  "Food & Dining",
   "Transportation",
-  "Housing",
-  "Entertainment",
-  "Utilities",
-  "Healthcare",
   "Shopping",
+  "Entertainment",
+  "Bills & Utilities",
+  "Healthcare",
   "Education",
-  "Personal",
+  "Travel",
+  "Groceries",
+  "Personal Care",
+  "Home & Garden",
+  "Gifts & Donations",
+  "Business",
   "Other",
 ]
 
-const ExpenseSchema: Schema = new Schema({
-  userId: { type: Schema.Types.ObjectId, ref: "User", required: true },
-  amount: { type: Number, required: true },
-  category: { type: String, required: true, enum: categories },
-  date: { type: Date, required: true },
-  description: { type: String },
-  bankAccountId: { type: Schema.Types.ObjectId, ref: "BankAccount" },
-  createdAt: { type: Date, default: Date.now },
-})
+const expenseSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: true,
+      ref: "User",
+    },
+    amount: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    category: {
+      type: String,
+      required: true,
+      enum: categories,
+    },
+    description: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    date: {
+      type: Date,
+      required: true,
+      default: Date.now,
+    },
+    bankAccountId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "BankAccount",
+      required: false,
+    },
+  },
+  {
+    timestamps: true,
+  },
+)
 
-// Prevent re-compilation error in development
-const ExpenseModel: Model<Expense> = mongoose.models?.Expense || mongoose.model<Expense>("Expense", ExpenseSchema)
+// Prevent re-compilation error
+const ExpenseModel = mongoose.models?.Expense || mongoose.model("Expense", expenseSchema)
 
 export default ExpenseModel

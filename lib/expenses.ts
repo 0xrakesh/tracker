@@ -1,142 +1,134 @@
-import { Types } from "mongoose"
-import { connectToDatabase } from "./mongodb"
-import ExpenseModel, { type Expense } from "./models/expense"
-import BankAccountModel from "./models/bank-account"
+import clientPromise from "./mongodb"
+import type { Expense } from "./models/expense"
+import { ObjectId } from "mongodb"
 
-/* -------------------------- helpers & type guards ------------------------- */
-const toObjectId = (id: string) => new Types.ObjectId(id)
-
-/* -------------------------------- queries --------------------------------- */
-export async function getExpenses(userId: string, start?: Date, end?: Date) {
-  await connectToDatabase()
-
-  const query: any = { userId: toObjectId(userId) }
-  if (start || end) {
-    query.date = {}
-    if (start) query.date.$gte = start
-    if (end) query.date.$lte = end
-  }
-
-  return ExpenseModel.find(query).sort({ date: -1 }).lean()
-}
-
-export async function addExpense(userId: string, expense: Omit<Expense, "_id" | "userId" | "createdAt">) {
-  await connectToDatabase()
-
-  const session = await ExpenseModel.startSession()
-  session.startTransaction()
-
+export async function addExpense(expense: Omit<Expense, "_id" | "createdAt">) {
   try {
-    const saved = await new ExpenseModel({
+    const client = await clientPromise
+    const db = client.db("finance-tracker")
+
+    const result = await db.collection("expenses").insertOne({
       ...expense,
-      userId: toObjectId(userId),
       createdAt: new Date(),
-    }).save({ session })
+    })
 
-    if (expense.bankAccountId) {
-      await BankAccountModel.findByIdAndUpdate(
-        expense.bankAccountId,
-        { $inc: { currentBalance: -expense.amount } },
-        { session },
-      )
-    }
-
-    await session.commitTransaction()
-    return saved.toObject()
-  } catch (e) {
-    await session.abortTransaction()
-    throw e
-  } finally {
-    session.endSession()
+    return result
+  } catch (error) {
+    console.error("Error adding expense:", error)
+    throw error
   }
 }
 
-export async function deleteExpense(userId: string, expenseId: string) {
-  await connectToDatabase()
-
-  const session = await ExpenseModel.startSession()
-  session.startTransaction()
-
+export async function getExpenses(userId: ObjectId, startDate?: Date, endDate?: Date) {
   try {
-    const expense = await ExpenseModel.findOne({
-      _id: toObjectId(expenseId),
-      userId: toObjectId(userId),
-    }).session(session)
+    const client = await clientPromise
+    const db = client.db("finance-tracker")
 
-    if (!expense) {
-      await session.abortTransaction()
-      return false
+    const query: any = { userId: new ObjectId(userId) }
+
+    if (startDate || endDate) {
+      query.date = {}
+      if (startDate) query.date.$gte = startDate
+      if (endDate) query.date.$lte = endDate
     }
 
-    if (expense.bankAccountId) {
-      await BankAccountModel.findByIdAndUpdate(
-        expense.bankAccountId,
-        { $inc: { currentBalance: expense.amount } },
-        { session },
-      )
-    }
+    const expenses = await db.collection("expenses").find(query).sort({ date: -1 }).toArray()
 
-    await ExpenseModel.deleteOne({ _id: expense._id }).session(session)
-    await session.commitTransaction()
-    return true
-  } catch (e) {
-    await session.abortTransaction()
-    throw e
-  } finally {
-    session.endSession()
+    return expenses
+  } catch (error) {
+    console.error("Error fetching expenses:", error)
+    throw error
   }
 }
 
-export async function getExpenseStats(userId: string, start?: Date, end?: Date) {
-  await connectToDatabase()
+export async function deleteExpense(expenseId: string, userId: ObjectId) {
+  try {
+    const client = await clientPromise
+    const db = client.db("finance-tracker")
 
-  const match: any = { userId: toObjectId(userId) }
-  if (start || end) {
-    match.date = {}
-    if (start) match.date.$gte = start
-    if (end) match.date.$lte = end
-  }
+    const result = await db.collection("expenses").deleteOne({
+      _id: new ObjectId(expenseId),
+      userId: new ObjectId(userId),
+    })
 
-  const [totals] = await ExpenseModel.aggregate([
-    { $match: match },
-    {
-      $facet: {
-        total: [{ $group: { _id: null, total: { $sum: "$amount" } } }],
-        byCategory: [{ $group: { _id: "$category", total: { $sum: "$amount" } } }, { $sort: { total: -1 } }],
-        byMonth: [
-          {
-            $group: {
-              _id: { year: { $year: "$date" }, month: { $month: "$date" } },
-              total: { $sum: "$amount" },
-            },
-          },
-          { $sort: { "_id.year": 1, "_id.month": 1 } },
-        ],
-      },
-    },
-    {
-      $project: {
-        total: { $arrayElemAt: ["$total.total", 0] },
-        byCategory: 1,
-        byMonth: 1,
-      },
-    },
-  ])
-
-  return {
-    total: totals?.total ?? 0,
-    byCategory: totals?.byCategory ?? [],
-    byMonth: totals?.byMonth ?? [],
+    return result
+  } catch (error) {
+    console.error("Error deleting expense:", error)
+    throw error
   }
 }
 
-/* ---------- helper used by new Bank-Account detailed view feature ---------- */
-export async function getExpensesByBankAccountId(userId: string, bankAccountId: string) {
-  await connectToDatabase()
-  return ExpenseModel.find({
-    userId: toObjectId(userId),
-    bankAccountId: toObjectId(bankAccountId),
-  })
-    .sort({ date: -1 })
-    .lean()
+export async function getExpenseStats(userId: ObjectId, startDate?: Date, endDate?: Date) {
+  try {
+    const client = await clientPromise
+    const db = client.db("finance-tracker")
+
+    const matchQuery: any = { userId: new ObjectId(userId) }
+
+    if (startDate || endDate) {
+      matchQuery.date = {}
+      if (startDate) matchQuery.date.$gte = startDate
+      if (endDate) matchQuery.date.$lte = endDate
+    }
+
+    const pipeline = [
+      { $match: matchQuery },
+      {
+        $group: {
+          _id: null,
+          totalAmount: { $sum: "$amount" },
+          totalCount: { $sum: 1 },
+          avgAmount: { $avg: "$amount" },
+        },
+      },
+    ]
+
+    const categoryPipeline = [
+      { $match: matchQuery },
+      {
+        $group: {
+          _id: "$category",
+          amount: { $sum: "$amount" },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { amount: -1 } },
+    ]
+
+    const [totalStats, categoryStats] = await Promise.all([
+      db.collection("expenses").aggregate(pipeline).toArray(),
+      db.collection("expenses").aggregate(categoryPipeline).toArray(),
+    ])
+
+    return {
+      total: totalStats[0]?.totalAmount || 0,
+      count: totalStats[0]?.totalCount || 0,
+      average: totalStats[0]?.avgAmount || 0,
+      byCategory: categoryStats,
+    }
+  } catch (error) {
+    console.error("Error fetching expense stats:", error)
+    throw error
+  }
+}
+
+export async function getExpensesByBankAccountId(bankAccountId: string, userId: ObjectId) {
+  try {
+    const client = await clientPromise
+    const db = client.db("finance-tracker")
+
+    const expenses = await db
+      .collection("expenses")
+      .find({
+        bankAccountId: new ObjectId(bankAccountId),
+        userId: new ObjectId(userId),
+      })
+      .sort({ date: -1 })
+      .toArray()
+
+    return expenses
+  } catch (error) {
+    console.error("Error fetching expenses by bank account:", error)
+    throw error
+  }
 }
