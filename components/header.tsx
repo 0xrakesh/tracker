@@ -1,14 +1,28 @@
 "use client"
 
-import { User, LogOut, BarChart3, Eye, EyeOff, Menu, PlusCircle, Wallet, PiggyBank, ReceiptText } from "lucide-react" // Import new icons
+import {
+  User,
+  LogOut,
+  BarChart3,
+  Eye,
+  EyeOff,
+  Menu,
+  PlusCircle,
+  Wallet,
+  PiggyBank,
+  ReceiptText,
+  Landmark,
+  Goal,
+  Repeat,
+} from "lucide-react"
 import Link from "next/link"
 import { useRouter, usePathname } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { useVisibility } from "@/lib/visibility-context"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "./theme-toggle"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet" // Import Sheet components
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu" // Import DropdownMenu components
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 export function Header() {
   const { user, logout } = useAuth()
@@ -79,6 +93,29 @@ export function Header() {
                           Add Loan
                         </Button>
                       </Link>
+                      <Link href="/dashboard/bank-accounts/create">
+                        <Button variant="ghost" className="w-full justify-start">
+                          <Landmark className="h-4 w-4 mr-2" />
+                          Add Bank Account
+                        </Button>
+                      </Link>
+                      <Link href="/dashboard/savings-goals/create">
+                        {" "}
+                        {/* New link */}
+                        <Button variant="ghost" className="w-full justify-start">
+                          <Goal className="h-4 w-4 mr-2" />
+                          Add Savings Goal
+                        </Button>
+                      </Link>
+                      <Link href="/dashboard/recurring-transactions">
+                        <Button
+                          variant={pathname === "/dashboard/recurring-transactions" ? "default" : "ghost"}
+                          className="w-full justify-start"
+                        >
+                          <Repeat className="h-4 w-4 mr-2" />
+                          Recurring Transactions
+                        </Button>
+                      </Link>
                     </nav>
                   </SheetContent>
                 </Sheet>
@@ -121,6 +158,26 @@ export function Header() {
                       <Link href="/dashboard/loans/create">
                         <Wallet className="h-4 w-4 mr-2" />
                         Add Loan
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/dashboard/bank-accounts/create">
+                        <Landmark className="h-4 w-4 mr-2" />
+                        Add Bank Account
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      {" "}
+                      {/* New dropdown item */}
+                      <Link href="/dashboard/savings-goals/create">
+                        <Goal className="h-4 w-4 mr-2" />
+                        Add Savings Goal
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/dashboard/recurring-transactions/create">
+                        <Repeat className="h-4 w-4 mr-2" />
+                        Add Recurring Transaction
                       </Link>
                     </DropdownMenuItem>
                   </DropdownMenuContent>

@@ -16,14 +16,16 @@ import { useLoans } from "@/hooks/use-loans"
 import { LoanList } from "@/components/loan-list"
 import Link from "next/link"
 import { BarChart3 } from "lucide-react"
-import { BudgetOverview } from "@/components/budget-overview" // Re-add BudgetOverview for viewing
+import { BudgetOverview } from "@/components/budget-overview"
+import { BankAccountList } from "@/components/bank-account-list"
+import { SavingsGoalOverview } from "@/components/savings-goal-overview" // Import SavingsGoalOverview
 
 export default function Dashboard() {
   const { user, isLoading: authLoading } = useAuth()
   const [startDate, setStartDate] = useState(startOfMonth(new Date()))
   const [endDate, setEndDate] = useState(endOfMonth(new Date()))
-  const { expenses, loading, error, deleteExpense } = useExpenses(startDate, endDate) // Removed addExpense
-  const { loans, loading: loansLoading, error: loansError, deleteLoan, addLoanPayment } = useLoans() // Removed addLoan
+  const { expenses, loading, error, deleteExpense } = useExpenses(startDate, endDate)
+  const { loans, loading: loansLoading, error: loansError, deleteLoan, addLoanPayment } = useLoans()
   const router = useRouter()
 
   const handleDateChange = (newStartDate: Date, newEndDate: Date) => {
@@ -110,8 +112,18 @@ export default function Dashboard() {
             </Card>
           </div>
 
-          {/* Sidebar - Stats and Budgets */}
+          {/* Sidebar - Bank Accounts, Savings Goals, Stats, and Budgets */}
           <div className="lg:col-span-4 space-y-6 min-w-0">
+            {/* Bank Accounts */}
+            <div className="w-full">
+              <BankAccountList />
+            </div>
+
+            {/* Savings Goals */}
+            <div className="w-full">
+              <SavingsGoalOverview />
+            </div>
+
             {/* Stats */}
             <div className="w-full">
               <ExpenseStats />
@@ -124,7 +136,7 @@ export default function Dashboard() {
                 <CardDescription className="text-sm">Set and track your spending limits</CardDescription>
               </CardHeader>
               <CardContent className="p-4">
-                <BudgetOverview /> {/* Now directly showing the overview */}
+                <BudgetOverview />
               </CardContent>
             </Card>
           </div>

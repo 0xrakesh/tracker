@@ -7,6 +7,7 @@ export interface Expense {
   category: string
   description: string
   date: Date
+  bankAccountId?: ObjectId // New: Optional field to link to a bank account
   createdAt: Date
 }
 
