@@ -67,7 +67,6 @@ const expenseSchema = new mongoose.Schema(
   },
 )
 
-// Prevent re-compilation error
 const ExpenseModel = mongoose.models?.Expense || mongoose.model("Expense", expenseSchema)
 
 export default ExpenseModel

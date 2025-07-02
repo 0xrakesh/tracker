@@ -1,8 +1,15 @@
+import { cookies } from "next/headers"
 import clientPromise from "./mongodb"
 import { ObjectId } from "mongodb"
 
-export async function getAuthUser(sessionId: string) {
+export async function getAuthUser() {
   try {
+    const sessionId = cookies().get("session")?.value
+
+    if (!sessionId) {
+      return null
+    }
+
     const client = await clientPromise
     const db = client.db("finance-tracker")
 
@@ -19,7 +26,15 @@ export async function getAuthUser(sessionId: string) {
       _id: new ObjectId(session.userId),
     })
 
-    return user
+    if (!user) {
+      return null
+    }
+
+    return {
+      id: user._id.toString(),
+      username: user.username,
+      email: user.email,
+    }
   } catch (error) {
     console.error("Error getting auth user:", error)
     return null

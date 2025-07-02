@@ -31,12 +31,12 @@ const bankAccountSchema = new mongoose.Schema(
     initialBalance: {
       type: Number,
       required: true,
-      min: 0,
+      default: 0,
     },
     currentBalance: {
       type: Number,
       required: true,
-      min: 0,
+      default: 0,
     },
   },
   {

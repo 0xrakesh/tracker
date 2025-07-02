@@ -3,7 +3,7 @@ import { cookies } from "next/headers"
 import { getExpenses } from "@/lib/expenses"
 import type { Expense } from "@/lib/models/expense"
 import clientPromise from "@/lib/mongodb"
-import { ObjectId } from "mongodb" // Import ObjectId
+import { ObjectId } from "mongodb"
 
 export async function GET(req: NextRequest) {
   try {
@@ -16,7 +16,6 @@ export async function GET(req: NextRequest) {
     const client = await clientPromise
     const db = client.db("finance-tracker")
 
-    // Find session
     const session = await db.collection("sessions").findOne({
       sessionId,
       expiresAt: { $gt: new Date() },
@@ -26,7 +25,6 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Session expired" }, { status: 401 })
     }
 
-    // Get date range parameters from URL
     const searchParams = req.nextUrl.searchParams
     const startDateParam = searchParams.get("startDate")
     const endDateParam = searchParams.get("endDate")
@@ -63,7 +61,6 @@ export async function POST(req: NextRequest) {
     const client = await clientPromise
     const db = client.db("finance-tracker")
 
-    // Find session
     const session = await db.collection("sessions").findOne({
       sessionId,
       expiresAt: { $gt: new Date() },
@@ -75,7 +72,6 @@ export async function POST(req: NextRequest) {
 
     const data = await req.json()
 
-    // Validate the data
     if (!data.amount || !data.category || !data.description) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
@@ -85,7 +81,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Amount must be a positive number" }, { status: 400 })
     }
 
-    // Check if bank account has sufficient balance
+    // Check bank account balance if specified
     if (data.bankAccountId && data.bankAccountId !== "none") {
       const bankAccount = await db.collection("bankAccounts").findOne({
         _id: new ObjectId(data.bankAccountId),
@@ -110,12 +106,10 @@ export async function POST(req: NextRequest) {
       bankAccountId: data.bankAccountId && data.bankAccountId !== "none" ? new ObjectId(data.bankAccountId) : undefined,
     }
 
-    // Use transaction to ensure atomicity
     const mongoSession = client.startSession()
 
     try {
       await mongoSession.withTransaction(async () => {
-        // Add expense
         const result = await db.collection("expenses").insertOne(
           {
             ...expense,
@@ -124,7 +118,7 @@ export async function POST(req: NextRequest) {
           { session: mongoSession },
         )
 
-        // Deduct amount from bank account if specified
+        // Deduct from bank account if specified
         if (expense.bankAccountId) {
           await db
             .collection("bankAccounts")
