@@ -1,38 +1,29 @@
 import { MongoClient } from "mongodb"
 
 if (!process.env.MONGODB_URI) {
-  throw new Error('Invalid/Missing environment variable: "MONGODB_URI"')
+  throw new Error("Please add your MongoDB URI to .env.local")
 }
 
 const uri = process.env.MONGODB_URI
-const options = {}
-
 let client: MongoClient
 let clientPromise: Promise<MongoClient>
 
 if (process.env.NODE_ENV === "development") {
-  const globalWithMongo = global as typeof globalThis & {
+  // In development mode, use a global variable so that the value
+  // is preserved across module reloads caused by HMR (Hot Module Replacement).
+  const globalWithMongo = global as typeof global & {
     _mongoClientPromise?: Promise<MongoClient>
   }
 
   if (!globalWithMongo._mongoClientPromise) {
-    client = new MongoClient(uri, options)
+    client = new MongoClient(uri)
     globalWithMongo._mongoClientPromise = client.connect()
   }
   clientPromise = globalWithMongo._mongoClientPromise
 } else {
-  client = new MongoClient(uri, options)
+  // In production mode, it's best to not use a global variable.
+  client = new MongoClient(uri)
   clientPromise = client.connect()
-}
-
-export async function connectToDatabase() {
-  try {
-    const client = await clientPromise
-    return client.db("finance-tracker")
-  } catch (error) {
-    console.error("Failed to connect to database:", error)
-    throw error
-  }
 }
 
 export default clientPromise
