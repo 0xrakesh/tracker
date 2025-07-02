@@ -1,30 +1,20 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { cookies } from "next/headers"
-import { processRecurringTransactions } from "@/lib/recurring-transactions"
-import clientPromise from "@/lib/mongodb"
+import { NextResponse } from "next/server"
+import { getAuthUser } from "@/lib/auth-server"
+import { processDueRecurringTransactions } from "@/lib/recurring-transactions"
 
-export async function POST(req: NextRequest) {
+export async function POST(request: Request) {
   try {
-    const sessionId = cookies().get("session")?.value
-
-    if (!sessionId) {
+    const user = await getAuthUser()
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const client = await clientPromise
-    const db = client.db("finance-tracker")
-
-    const session = await db.collection("sessions").findOne({
-      sessionId,
-      expiresAt: { $gt: new Date() },
+    const { processedCount, processedTransactions } = await processDueRecurringTransactions(user._id.toString())
+    return NextResponse.json({
+      message: `Processed ${processedCount} recurring transactions.`,
+      processedCount,
+      processedTransactions,
     })
-
-    if (!session) {
-      return NextResponse.json({ error: "Session expired" }, { status: 401 })
-    }
-
-    const { processedCount } = await processRecurringTransactions(session.userId)
-    return NextResponse.json({ success: true, processedCount })
   } catch (error) {
     console.error("Error processing recurring transactions:", error)
     return NextResponse.json({ error: "Failed to process recurring transactions" }, { status: 500 })

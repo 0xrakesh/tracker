@@ -1,15 +1,11 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import type { Expense } from "@/lib/models/expense" // Assuming only expenses for now
-
-interface BankAccountTransaction extends Expense {
-  // Can add more fields if income is tracked later
-}
+import type { Expense } from "@/lib/models/expense"
 
 export function useBankAccountTransactions(bankAccountId: string | null) {
-  const [transactions, setTransactions] = useState<BankAccountTransaction[]>([])
-  const [loading, setLoading] = useState(true)
+  const [transactions, setTransactions] = useState<Expense[]>([])
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const fetchTransactions = useCallback(async () => {

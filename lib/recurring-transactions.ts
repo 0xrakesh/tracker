@@ -1,99 +1,109 @@
+import { connectToDatabase } from "@/lib/mongodb"
+import RecurringTransactionModel, { type RecurringTransaction } from "@/lib/models/recurring-transaction"
+import ExpenseModel from "@/lib/models/expense" // Assuming ExpenseModel exists
+import BankAccountModel from "@/lib/models/bank-account" // Assuming BankAccountModel exists
 import { ObjectId } from "mongodb"
-import clientPromise from "./mongodb"
-import type { RecurringTransaction } from "./models/recurring-transaction"
-import { addExpense } from "./expenses" // Import addExpense to create actual expenses
-import { addMonths, addWeeks, addYears, addDays } from "date-fns"
+import { addDays, addWeeks, addMonths, addQuarters, addYears, isPast } from "date-fns"
 
 export async function getRecurringTransactions(userId: string) {
-  const client = await clientPromise
-  const db = client.db("finance-tracker")
-
-  const recurringTransactions = await db
-    .collection("recurringTransactions")
-    .find({ userId })
+  await connectToDatabase()
+  return RecurringTransactionModel.find({ userId: new ObjectId(userId) })
     .sort({ nextOccurrenceDate: 1 })
-    .toArray()
-
-  return JSON.parse(JSON.stringify(recurringTransactions))
+    .lean()
 }
 
-export async function addRecurringTransaction(transaction: Omit<RecurringTransaction, "_id" | "createdAt">) {
-  const client = await clientPromise
-  const db = client.db("finance-tracker")
-
-  const result = await db.collection("recurringTransactions").insertOne({
+export async function addRecurringTransaction(
+  userId: string,
+  transaction: Omit<RecurringTransaction, "_id" | "userId" | "createdAt">,
+) {
+  await connectToDatabase()
+  const newTransaction = new RecurringTransactionModel({
     ...transaction,
-    createdAt: new Date(),
+    userId: new ObjectId(userId),
   })
-
-  return result
+  await newTransaction.save()
+  return newTransaction.toObject()
 }
 
-export async function deleteRecurringTransaction(id: string) {
-  const client = await clientPromise
-  const db = client.db("finance-tracker")
-
-  const result = await db.collection("recurringTransactions").deleteOne({
-    _id: new ObjectId(id),
+export async function deleteRecurringTransaction(userId: string, transactionId: string) {
+  await connectToDatabase()
+  const result = await RecurringTransactionModel.deleteOne({
+    _id: new ObjectId(transactionId),
+    userId: new ObjectId(userId),
   })
-
-  return result
+  return result.deletedCount > 0
 }
 
-// Function to process recurring transactions
-export async function processRecurringTransactions(userId: string) {
-  const client = await clientPromise
-  const db = client.db("finance-tracker")
+// Helper to calculate next occurrence date
+function calculateNextOccurrence(currentDate: Date, frequency: RecurringTransaction["frequency"]): Date {
+  switch (frequency) {
+    case "daily":
+      return addDays(currentDate, 1)
+    case "weekly":
+      return addWeeks(currentDate, 1)
+    case "monthly":
+      return addMonths(currentDate, 1)
+    case "quarterly":
+      return addQuarters(currentDate, 1)
+    case "yearly":
+      return addYears(currentDate, 1)
+    default:
+      return currentDate // Should not happen
+  }
+}
 
+export async function processDueRecurringTransactions(userId: string) {
+  await connectToDatabase()
   const now = new Date()
-  let processedCount = 0 // Changed from const to let
+  const processedTransactions: ExpenseModel[] = []
+  let processedCount = 0
 
-  // Find recurring transactions that are due
-  const dueTransactions = await db
-    .collection("recurringTransactions")
-    .find({
-      userId,
-      nextOccurrenceDate: { $lte: now },
-    })
-    .toArray()
+  const dueTransactions = await RecurringTransactionModel.find({
+    userId: new ObjectId(userId),
+    nextOccurrenceDate: { $lte: now },
+  })
 
   for (const transaction of dueTransactions) {
-    // Create an actual expense entry
-    if (transaction.type === "expense") {
-      await addExpense({
-        userId: transaction.userId,
-        amount: transaction.amount,
-        category: transaction.category,
-        description: `Recurring: ${transaction.description}`,
-        date: transaction.nextOccurrenceDate, // Use the scheduled date
-        bankAccountId: transaction.bankAccountId,
-      })
-    }
-    // TODO: Add income handling if 'type' is extended
+    // Create a new expense entry
+    const newExpense = new ExpenseModel({
+      userId: transaction.userId,
+      amount: transaction.amount,
+      category: transaction.category,
+      description: `Recurring: ${transaction.name}`,
+      date: transaction.nextOccurrenceDate, // Use the scheduled occurrence date
+      bankAccountId: transaction.bankAccountId,
+      isRecurring: true, // Mark as recurring
+      recurringTransactionId: transaction._id, // Link to the recurring transaction
+    })
 
-    // Calculate next occurrence date
-    let newNextOccurrenceDate = new Date(transaction.nextOccurrenceDate)
-    switch (transaction.frequency) {
-      case "daily":
-        newNextOccurrenceDate = addDays(newNextOccurrenceDate, 1)
-        break
-      case "weekly":
-        newNextOccurrenceDate = addWeeks(newNextOccurrenceDate, 1)
-        break
-      case "monthly":
-        newNextOccurrenceDate = addMonths(newNextOccurrenceDate, 1)
-        break
-      case "yearly":
-        newNextOccurrenceDate = addYears(newNextOccurrenceDate, 1)
-        break
-    }
+    try {
+      await newExpense.save()
+      processedTransactions.push(newExpense)
+      processedCount++
 
-    // Update the recurring transaction with the new next occurrence date
-    await db
-      .collection("recurringTransactions")
-      .updateOne({ _id: transaction._id }, { $set: { nextOccurrenceDate: newNextOccurrenceDate } })
-    processedCount++
+      // Deduct from bank account if linked
+      if (transaction.bankAccountId) {
+        await BankAccountModel.findByIdAndUpdate(
+          transaction.bankAccountId,
+          { $inc: { currentBalance: -transaction.amount } },
+          { new: true },
+        )
+      }
+
+      // Update next occurrence date for the recurring transaction
+      let nextDate = calculateNextOccurrence(transaction.nextOccurrenceDate, transaction.frequency)
+      // If the next calculated date is still in the past (e.g., server was down for a while),
+      // advance it until it's in the future.
+      while (isPast(nextDate)) {
+        nextDate = calculateNextOccurrence(nextDate, transaction.frequency)
+      }
+
+      transaction.nextOccurrenceDate = nextDate
+      await transaction.save()
+    } catch (error) {
+      console.error(`Error processing recurring transaction ${transaction._id}:`, error)
+      // Optionally, handle errors more gracefully, e.g., log to a separate error collection
+    }
   }
-
-  return { processedCount }
+  return { processedCount, processedTransactions }
 }

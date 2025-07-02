@@ -1,36 +1,22 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { cookies } from "next/headers"
+import { NextResponse } from "next/server"
+import { getAuthUser } from "@/lib/auth-server"
 import { deleteRecurringTransaction } from "@/lib/recurring-transactions"
-import clientPromise from "@/lib/mongodb"
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: Request, { params }: { params: { id: string } }) {
   try {
-    const sessionId = cookies().get("session")?.value
-
-    if (!sessionId) {
+    const user = await getAuthUser()
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const client = await clientPromise
-    const db = client.db("finance-tracker")
-
-    const session = await db.collection("sessions").findOne({
-      sessionId,
-      expiresAt: { $gt: new Date() },
-    })
-
-    if (!session) {
-      return NextResponse.json({ error: "Session expired" }, { status: 401 })
-    }
-
     const { id } = params
-    const result = await deleteRecurringTransaction(id)
+    const success = await deleteRecurringTransaction(user._id.toString(), id)
 
-    if (result.deletedCount === 0) {
-      return NextResponse.json({ error: "Recurring transaction not found" }, { status: 404 })
+    if (!success) {
+      return NextResponse.json({ error: "Recurring transaction not found or not authorized" }, { status: 404 })
     }
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ message: "Recurring transaction deleted successfully" }, { status: 200 })
   } catch (error) {
     console.error("Error deleting recurring transaction:", error)
     return NextResponse.json({ error: "Failed to delete recurring transaction" }, { status: 500 })

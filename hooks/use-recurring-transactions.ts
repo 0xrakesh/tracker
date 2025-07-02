@@ -26,12 +26,12 @@ export function useRecurringTransactions() {
         throw new Error("Failed to fetch recurring transactions or bank accounts")
       }
 
-      const transactionsData: RecurringTransaction[] = await transactionsResponse.json()
-      const accountsData: BankAccount[] = await accountsResponse.json()
+      const transactionsData = await transactionsResponse.json()
+      const accountsData = await accountsResponse.json()
 
-      const transactionsWithAccountNames = transactionsData.map((transaction) => {
+      const transactionsWithAccountNames = transactionsData.map((transaction: RecurringTransaction) => {
         const linkedAccount = transaction.bankAccountId
-          ? accountsData.find((acc) => acc._id?.toString() === transaction.bankAccountId?.toString())
+          ? accountsData.find((acc: BankAccount) => acc._id?.toString() === transaction.bankAccountId?.toString())
           : undefined
         return {
           ...transaction,

@@ -1,113 +1,142 @@
-import { ObjectId } from "mongodb"
-import clientPromise from "./mongodb"
-import type { Expense } from "./models/expense"
+import { Types } from "mongoose"
+import { connectToDatabase } from "./mongodb"
+import ExpenseModel, { type Expense } from "./models/expense"
+import BankAccountModel from "./models/bank-account"
 
-export async function getExpenses(userId: string, startDate?: Date, endDate?: Date) {
-  const client = await clientPromise
-  const db = client.db("finance-tracker")
+/* -------------------------- helpers & type guards ------------------------- */
+const toObjectId = (id: string) => new Types.ObjectId(id)
 
-  const query: any = { userId }
+/* -------------------------------- queries --------------------------------- */
+export async function getExpenses(userId: string, start?: Date, end?: Date) {
+  await connectToDatabase()
 
-  // Add date filtering if provided
-  if (startDate || endDate) {
+  const query: any = { userId: toObjectId(userId) }
+  if (start || end) {
     query.date = {}
-    if (startDate) {
-      query.date.$gte = startDate
-    }
-    if (endDate) {
-      query.date.$lte = endDate
-    }
+    if (start) query.date.$gte = start
+    if (end) query.date.$lte = end
   }
 
-  const expenses = await db.collection("expenses").find(query).sort({ date: -1 }).toArray()
-
-  return JSON.parse(JSON.stringify(expenses))
+  return ExpenseModel.find(query).sort({ date: -1 }).lean()
 }
 
-export async function addExpense(expense: Omit<Expense, "_id" | "createdAt">) {
-  const client = await clientPromise
-  const db = client.db("finance-tracker")
+export async function addExpense(userId: string, expense: Omit<Expense, "_id" | "userId" | "createdAt">) {
+  await connectToDatabase()
 
-  const result = await db.collection("expenses").insertOne({
-    ...expense,
-    createdAt: new Date(),
-  })
+  const session = await ExpenseModel.startSession()
+  session.startTransaction()
 
-  return result
-}
+  try {
+    const saved = await new ExpenseModel({
+      ...expense,
+      userId: toObjectId(userId),
+      createdAt: new Date(),
+    }).save({ session })
 
-export async function deleteExpense(id: string) {
-  const client = await clientPromise
-  const db = client.db("finance-tracker")
-
-  const result = await db.collection("expenses").deleteOne({
-    _id: new ObjectId(id),
-  })
-
-  return result
-}
-
-export async function getExpenseStats(userId: string, startDate?: Date, endDate?: Date) {
-  const client = await clientPromise
-  const db = client.db("finance-tracker")
-
-  const matchStage: any = { userId }
-
-  // Add date filtering if provided
-  if (startDate || endDate) {
-    matchStage.date = {}
-    if (startDate) {
-      matchStage.date.$gte = startDate
+    if (expense.bankAccountId) {
+      await BankAccountModel.findByIdAndUpdate(
+        expense.bankAccountId,
+        { $inc: { currentBalance: -expense.amount } },
+        { session },
+      )
     }
-    if (endDate) {
-      matchStage.date.$lte = endDate
+
+    await session.commitTransaction()
+    return saved.toObject()
+  } catch (e) {
+    await session.abortTransaction()
+    throw e
+  } finally {
+    session.endSession()
+  }
+}
+
+export async function deleteExpense(userId: string, expenseId: string) {
+  await connectToDatabase()
+
+  const session = await ExpenseModel.startSession()
+  session.startTransaction()
+
+  try {
+    const expense = await ExpenseModel.findOne({
+      _id: toObjectId(expenseId),
+      userId: toObjectId(userId),
+    }).session(session)
+
+    if (!expense) {
+      await session.abortTransaction()
+      return false
     }
+
+    if (expense.bankAccountId) {
+      await BankAccountModel.findByIdAndUpdate(
+        expense.bankAccountId,
+        { $inc: { currentBalance: expense.amount } },
+        { session },
+      )
+    }
+
+    await ExpenseModel.deleteOne({ _id: expense._id }).session(session)
+    await session.commitTransaction()
+    return true
+  } catch (e) {
+    await session.abortTransaction()
+    throw e
+  } finally {
+    session.endSession()
+  }
+}
+
+export async function getExpenseStats(userId: string, start?: Date, end?: Date) {
+  await connectToDatabase()
+
+  const match: any = { userId: toObjectId(userId) }
+  if (start || end) {
+    match.date = {}
+    if (start) match.date.$gte = start
+    if (end) match.date.$lte = end
   }
 
-  // Get total expenses
-  const total = await db
-    .collection("expenses")
-    .aggregate([{ $match: matchStage }, { $group: { _id: null, total: { $sum: "$amount" } } }])
-    .toArray()
-
-  // Get expenses by category
-  const byCategory = await db
-    .collection("expenses")
-    .aggregate([
-      { $match: matchStage },
-      { $group: { _id: "$category", total: { $sum: "$amount" } } },
-      { $sort: { total: -1 } },
-    ])
-    .toArray()
-
-  // Get expenses by month (if date range spans multiple months)
-  const byMonth = await db
-    .collection("expenses")
-    .aggregate([
-      { $match: matchStage },
-      {
-        $group: {
-          _id: {
-            year: { $year: "$date" },
-            month: { $month: "$date" },
+  const [totals] = await ExpenseModel.aggregate([
+    { $match: match },
+    {
+      $facet: {
+        total: [{ $group: { _id: null, total: { $sum: "$amount" } } }],
+        byCategory: [{ $group: { _id: "$category", total: { $sum: "$amount" } } }, { $sort: { total: -1 } }],
+        byMonth: [
+          {
+            $group: {
+              _id: { year: { $year: "$date" }, month: { $month: "$date" } },
+              total: { $sum: "$amount" },
+            },
           },
-          total: { $sum: "$amount" },
-        },
+          { $sort: { "_id.year": 1, "_id.month": 1 } },
+        ],
       },
-      { $sort: { "_id.year": 1, "_id.month": 1 } },
-    ])
-    .toArray()
+    },
+    {
+      $project: {
+        total: { $arrayElemAt: ["$total.total", 0] },
+        byCategory: 1,
+        byMonth: 1,
+      },
+    },
+  ])
 
   return {
-    total: total.length > 0 ? total[0].total : 0,
-    byCategory: byCategory.map((item) => ({
-      category: item._id,
-      total: item.total,
-    })),
-    byMonth: byMonth.map((item) => ({
-      year: item._id.year,
-      month: item._id.month,
-      total: item.total,
-    })),
+    total: totals?.total ?? 0,
+    byCategory: totals?.byCategory ?? [],
+    byMonth: totals?.byMonth ?? [],
   }
+}
+
+/* ---------- helper used by new Bank-Account detailed view feature ---------- */
+export async function getExpensesByBankAccountId(userId: string, bankAccountId: string) {
+  await connectToDatabase()
+  return ExpenseModel.find({
+    userId: toObjectId(userId),
+    bankAccountId: toObjectId(bankAccountId),
+  })
+    .sort({ date: -1 })
+    .lean()
 }

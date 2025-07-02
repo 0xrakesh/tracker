@@ -1,57 +1,138 @@
 "use client"
+import type { ColumnDef } from "@tanstack/react-table"
+import { Trash2, Eye } from "lucide-react"
 
-import { useState } from "react"
-import { Trash2, Banknote, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { DataTable } from "@/components/data-table"
 import { useBankAccounts } from "@/hooks/use-bank-accounts"
-import { useVisibility } from "@/lib/visibility-context"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { toast } from "@/components/ui/use-toast"
+import { Card, CardContent } from "@/components/ui/card"
+import type { BankAccount } from "@/lib/models/bank-account"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 import { BankAccountTransactionsList } from "./bank-account-transactions-list"
 
 export function BankAccountList() {
   const { bankAccounts, loading, error, deleteBankAccount } = useBankAccounts()
-  const [isDeleting, setIsDeleting] = useState<string | null>(null)
-  const { showAmounts } = useVisibility()
-  const [isTransactionsDialogOpen, setIsTransactionsDialogOpen] = useState(false)
-  const [selectedAccountForTransactions, setSelectedAccountForTransactions] = useState<{
-    id: string
-    name: string
-  } | null>(null)
 
   const handleDelete = async (id: string) => {
-    setIsDeleting(id)
-    try {
-      await deleteBankAccount(id)
-    } finally {
-      setIsDeleting(null)
+    const success = await deleteBankAccount(id)
+    if (success) {
+      toast({
+        title: "Bank Account Deleted",
+        description: "Bank account has been successfully deleted.",
+      })
+    } else {
+      toast({
+        title: "Failed to Delete",
+        description: "There was an error deleting the bank account.",
+        variant: "destructive",
+      })
     }
   }
 
-  const handleOpenTransactionsDialog = (accountId: string | undefined, accountName: string) => {
-    if (accountId) {
-      setSelectedAccountForTransactions({ id: accountId, name: accountName })
-      setIsTransactionsDialogOpen(true)
-    }
-  }
+  const columns: ColumnDef<BankAccount>[] = [
+    {
+      accessorKey: "bankName",
+      header: "Bank Name",
+      cell: ({ row }) => <div className="font-medium">{row.getValue("bankName")}</div>,
+    },
+    {
+      accessorKey: "accountName",
+      header: "Account Name",
+    },
+    {
+      accessorKey: "currentBalance",
+      header: () => <div className="text-right">Current Balance</div>,
+      cell: ({ row }) => {
+        const amount = Number.parseFloat(row.getValue("currentBalance"))
+        const formatted = new Intl.NumberFormat("en-IN", {
+          style: "currency",
+          currency: "INR",
+        }).format(amount)
+        return <div className="text-right font-medium">{formatted}</div>
+      },
+    },
+    {
+      id: "actions",
+      enableHiding: false,
+      cell: ({ row }) => {
+        const account = row.original
 
-  const handleCloseTransactionsDialog = () => {
-    setIsTransactionsDialogOpen(false)
-    setSelectedAccountForTransactions(null)
-  }
+        return (
+          <div className="flex justify-end gap-2">
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8" title="View Transactions">
+                  <Eye className="h-4 w-4" />
+                  <span className="sr-only">View Transactions</span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>
+                    Transactions for {account.bankName} ({account.accountName})
+                  </DialogTitle>
+                  <DialogDescription>A list of all expenses associated with this bank account.</DialogDescription>
+                </DialogHeader>
+                <BankAccountTransactionsList
+                  bankAccountId={account._id?.toString() || ""}
+                  bankAccountName={`${account.bankName} (${account.accountName})`}
+                />
+              </DialogContent>
+            </Dialog>
 
-  const formatAmount = (amount: number) => {
-    return showAmounts ? `₹${amount.toFixed(2)}` : "₹****.**"
-  }
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8" title="Delete Account">
+                  <Trash2 className="h-4 w-4" />
+                  <span className="sr-only">Delete account</span>
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete your bank account and all associated
+                    expenses will no longer be linked to it.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => handleDelete(account._id?.toString() || "")}>
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        )
+      },
+    },
+  ]
 
   if (loading) {
     return (
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle className="text-lg">Bank Accounts</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8 text-muted-foreground">Loading bank accounts...</div>
+      <Card>
+        <CardContent className="p-4 text-center">
+          <div className="text-xl font-bold">Loading bank accounts...</div>
         </CardContent>
       </Card>
     )
@@ -59,92 +140,20 @@ export function BankAccountList() {
 
   if (error) {
     return (
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle className="text-lg">Bank Accounts</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8 text-destructive text-sm">{error}</div>
+      <Card>
+        <CardContent className="p-4 text-center text-red-500">
+          <div className="text-xl font-bold">Error: {error}</div>
         </CardContent>
       </Card>
     )
   }
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="text-lg">Bank Accounts</CardTitle>
-        <CardDescription className="text-sm">Your linked bank accounts and their balances.</CardDescription>
-      </CardHeader>
-      <CardContent className="p-4 space-y-4">
-        {bankAccounts.length === 0 ? (
-          <div className="text-center py-4 text-muted-foreground">
-            <p>No bank accounts added yet.</p>
-            <p className="text-sm mt-1">Add an account to track your funds.</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {bankAccounts.map((account) => (
-              <div
-                key={account._id?.toString()}
-                className="flex items-center justify-between border rounded-lg p-3 bg-muted/50"
-              >
-                <div className="flex items-center gap-3">
-                  <Banknote className="h-5 w-5 text-primary" />
-                  <div>
-                    <h4 className="font-semibold">{account.bankName}</h4>
-                    <p className="text-sm text-muted-foreground">{account.accountName}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() =>
-                      handleOpenTransactionsDialog(
-                        account._id?.toString(),
-                        `${account.bankName} (${account.accountName})`,
-                      )
-                    }
-                    className="h-8 w-8 text-muted-foreground hover:text-primary shrink-0"
-                    title="View Transactions"
-                  >
-                    <Eye className="h-4 w-4" />
-                    <span className="sr-only">View Transactions</span>
-                  </Button>
-                  <span className="font-bold text-lg text-primary whitespace-nowrap">
-                    {formatAmount(account.currentBalance)}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleDelete(account._id?.toString() || "")}
-                    disabled={isDeleting === account._id?.toString()}
-                    className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    <span className="sr-only">Delete account</span>
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
-      {selectedAccountForTransactions && (
-        <Dialog open={isTransactionsDialogOpen} onOpenChange={handleCloseTransactionsDialog}>
-          <DialogContent className="sm:max-w-[600px]">
-            <DialogHeader>
-              <DialogTitle>Transactions for {selectedAccountForTransactions.name}</DialogTitle>
-              <DialogDescription>All recorded expenses linked to this account.</DialogDescription>
-            </DialogHeader>
-            <BankAccountTransactionsList
-              bankAccountId={selectedAccountForTransactions.id}
-              bankAccountName={selectedAccountForTransactions.name}
-            />
-          </DialogContent>
-        </Dialog>
-      )}
-    </Card>
+    <DataTable
+      columns={columns}
+      data={bankAccounts}
+      filterColumnId="bankName"
+      filterPlaceholder="Filter by bank name..."
+    />
   )
 }

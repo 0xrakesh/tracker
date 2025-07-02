@@ -1,27 +1,59 @@
 "use client"
 
-import { useState } from "react"
-import { Trash2 } from "lucide-react"
+import * as React from "react"
+import type { ColumnDef } from "@tanstack/react-table"
+import { format } from "date-fns"
+import { Trash2, Repeat } from "lucide-react"
+
 import { Button } from "@/components/ui/button"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
+import { DataTable } from "@/components/data-table"
 import { useRecurringTransactions } from "@/hooks/use-recurring-transactions"
-import { useVisibility } from "@/lib/visibility-context"
-import { format, isPast, isToday } from "date-fns"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { toast } from "@/components/ui/use-toast"
+import { Card, CardContent } from "@/components/ui/card"
+
+interface RecurringTransactionWithAccount {
+  _id: string
+  name: string
+  amount: number
+  category: string
+  frequency: "daily" | "weekly" | "monthly" | "quarterly" | "yearly"
+  startDate: Date
+  nextOccurrenceDate: Date
+  bankAccountId?: string
+  bankAccountName?: string
+  notes?: string
+  createdAt: Date
+}
 
 export function RecurringTransactionList() {
   const { recurringTransactions, loading, error, deleteRecurringTransaction, processDueTransactions } =
     useRecurringTransactions()
-  const [isDeleting, setIsDeleting] = useState<string | null>(null)
-  const [isProcessing, setIsProcessing] = useState(false)
-  const { showAmounts } = useVisibility()
+  const [isProcessing, setIsProcessing] = React.useState(false)
 
   const handleDelete = async (id: string) => {
-    setIsDeleting(id)
-    try {
-      await deleteRecurringTransaction(id)
-    } finally {
-      setIsDeleting(null)
+    const success = await deleteRecurringTransaction(id)
+    if (success) {
+      toast({
+        title: "Transaction Deleted",
+        description: "Recurring transaction has been successfully deleted.",
+      })
+    } else {
+      toast({
+        title: "Failed to Delete",
+        description: "There was an error deleting the recurring transaction.",
+        variant: "destructive",
+      })
     }
   }
 
@@ -30,103 +62,131 @@ export function RecurringTransactionList() {
     try {
       const processedCount = await processDueTransactions()
       if (processedCount > 0) {
-        // Optionally show a toast or message about processed transactions
+        toast({
+          title: "Transactions Processed",
+          description: `Successfully processed ${processedCount} due recurring transactions.`,
+        })
+      } else {
+        toast({
+          title: "No Due Transactions",
+          description: "No recurring transactions were due for processing.",
+        })
       }
+    } catch (err) {
+      toast({
+        title: "Processing Failed",
+        description: "An error occurred while processing recurring transactions.",
+        variant: "destructive",
+      })
     } finally {
       setIsProcessing(false)
     }
   }
 
-  const formatAmount = (amount: number) => {
-    return showAmounts ? `₹${amount.toFixed(2)}` : "₹****.**"
-  }
+  const columns: ColumnDef<RecurringTransactionWithAccount>[] = [
+    {
+      accessorKey: "name",
+      header: "Name",
+      cell: ({ row }) => <div className="font-medium">{row.getValue("name")}</div>,
+    },
+    {
+      accessorKey: "amount",
+      header: () => <div className="text-right">Amount</div>,
+      cell: ({ row }) => {
+        const amount = Number.parseFloat(row.getValue("amount"))
+        const formatted = new Intl.NumberFormat("en-IN", {
+          style: "currency",
+          currency: "INR",
+        }).format(amount)
+        return <div className="text-right font-medium">{formatted}</div>
+      },
+    },
+    {
+      accessorKey: "category",
+      header: "Category",
+    },
+    {
+      accessorKey: "frequency",
+      header: "Frequency",
+      cell: ({ row }) => <div className="capitalize">{row.getValue("frequency")}</div>,
+    },
+    {
+      accessorKey: "nextOccurrenceDate",
+      header: "Next Due",
+      cell: ({ row }) => {
+        const date = row.getValue("nextOccurrenceDate") as Date
+        return format(new Date(date), "PPP")
+      },
+    },
+    {
+      accessorKey: "bankAccountName",
+      header: "Bank Account",
+      cell: ({ row }) => <div>{row.getValue("bankAccountName") || "N/A"}</div>,
+    },
+    {
+      id: "actions",
+      enableHiding: false,
+      cell: ({ row }) => {
+        const transaction = row.original
+
+        return (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <Trash2 className="h-4 w-4" />
+                <span className="sr-only">Delete transaction</span>
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. This will permanently delete your recurring transaction.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={() => handleDelete(transaction._id)}>Delete</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )
+      },
+    },
+  ]
 
   if (loading) {
     return (
-      <div className="text-center py-8 text-muted-foreground border rounded-lg bg-card">
-        Loading recurring transactions...
-      </div>
+      <Card>
+        <CardContent className="p-4 text-center">
+          <div className="text-xl font-bold">Loading recurring transactions...</div>
+        </CardContent>
+      </Card>
     )
   }
 
   if (error) {
-    return <div className="text-center py-8 text-destructive border rounded-lg bg-card">{error}</div>
-  }
-
-  if (recurringTransactions.length === 0) {
     return (
-      <div className="text-center py-8 text-muted-foreground border rounded-lg bg-card">
-        No recurring transactions added yet.
-      </div>
+      <Card>
+        <CardContent className="p-4 text-center text-red-500">
+          <div className="text-xl font-bold">Error: {error}</div>
+        </CardContent>
+      </Card>
     )
   }
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
-        <Button onClick={handleProcessDue} disabled={isProcessing}>
-          {isProcessing ? "Processing..." : "Process Due Transactions"}
-        </Button>
-      </div>
-      <div className="border rounded-lg bg-card overflow-hidden">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="min-w-[150px]">Description</TableHead>
-                <TableHead className="min-w-[100px]">Category</TableHead>
-                <TableHead className="text-right min-w-[100px]">Amount</TableHead>
-                <TableHead className="min-w-[80px]">Frequency</TableHead>
-                <TableHead className="min-w-[120px]">Next Due</TableHead>
-                <TableHead className="min-w-[150px]">Bank Account</TableHead>
-                <TableHead className="w-[80px]"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {recurringTransactions.map((transaction) => {
-                const isDue = isPast(transaction.nextOccurrenceDate) || isToday(transaction.nextOccurrenceDate)
-                return (
-                  <TableRow key={transaction._id?.toString()}>
-                    <TableCell className="font-medium max-w-[200px] truncate" title={transaction.description}>
-                      {transaction.description}
-                    </TableCell>
-                    <TableCell className="whitespace-nowrap">{transaction.category}</TableCell>
-                    <TableCell className="text-right font-bold whitespace-nowrap">
-                      {formatAmount(transaction.amount)}
-                    </TableCell>
-                    <TableCell className="capitalize whitespace-nowrap">
-                      <Badge variant="secondary">{transaction.frequency}</Badge>
-                    </TableCell>
-                    <TableCell className={isDue ? "text-destructive font-medium" : "text-foreground"}>
-                      {format(new Date(transaction.nextOccurrenceDate), "MMM d, yyyy")}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground text-sm">
-                      {transaction.bankAccountName || "N/A"}
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDelete(transaction._id?.toString() || "")}
-                        disabled={isDeleting === transaction._id?.toString()}
-                        className="hover:bg-destructive hover:text-destructive-foreground"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        <span className="sr-only">Delete</span>
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                )
-              })}
-            </TableBody>
-          </Table>
-        </div>
-        <div className="p-4 border-t bg-muted/50">
-          <div className="text-sm text-muted-foreground">
-            Showing {recurringTransactions.length} recurring transactions
-          </div>
-        </div>
-      </div>
+      <Button onClick={handleProcessDue} disabled={isProcessing} className="w-full md:w-auto">
+        <Repeat className="h-4 w-4 mr-2" />
+        {isProcessing ? "Processing..." : "Process Due Transactions"}
+      </Button>
+      <DataTable
+        columns={columns}
+        data={recurringTransactions}
+        filterColumnId="name"
+        filterPlaceholder="Filter by name..."
+      />
     </div>
   )
 }
