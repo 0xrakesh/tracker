@@ -81,61 +81,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Amount must be a positive number" }, { status: 400 })
     }
 
-    // Check bank account balance if specified
-    if (data.bankAccountId && data.bankAccountId !== "none") {
-      const bankAccount = await db.collection("bankAccounts").findOne({
-        _id: new ObjectId(data.bankAccountId),
-        userId: session.userId,
-      })
-
-      if (!bankAccount) {
-        return NextResponse.json({ error: "Bank account not found" }, { status: 404 })
-      }
-
-      if (bankAccount.currentBalance < expenseAmount) {
-        return NextResponse.json({ error: "Insufficient balance in bank account" }, { status: 400 })
-      }
-    }
-
     const expense: Omit<Expense, "_id" | "createdAt"> = {
       userId: new ObjectId(session.userId),
       amount: expenseAmount,
       category: data.category,
       description: data.description,
       date: new Date(data.date || new Date()),
-      bankAccountId: data.bankAccountId && data.bankAccountId !== "none" ? new ObjectId(data.bankAccountId) : undefined,
     }
 
-    const mongoSession = client.startSession()
+    const result = await db.collection("expenses").insertOne({
+      ...expense,
+      createdAt: new Date(),
+    })
 
-    try {
-      await mongoSession.withTransaction(async () => {
-        const result = await db.collection("expenses").insertOne(
-          {
-            ...expense,
-            createdAt: new Date(),
-          },
-          { session: mongoSession },
-        )
-
-        // Deduct from bank account if specified
-        if (expense.bankAccountId) {
-          await db
-            .collection("bankAccounts")
-            .updateOne(
-              { _id: expense.bankAccountId, userId: session.userId },
-              { $inc: { currentBalance: -expenseAmount } },
-              { session: mongoSession },
-            )
-        }
-
-        return result
-      })
-
-      return NextResponse.json({ success: true })
-    } finally {
-      await mongoSession.endSession()
-    }
+    return NextResponse.json({ success: true, id: result.insertedId })
   } catch (error) {
     console.error("Error adding expense:", error)
     return NextResponse.json({ error: "Failed to add expense" }, { status: 500 })

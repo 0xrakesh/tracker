@@ -95,23 +95,11 @@ export async function getExpenseStats(userId: ObjectId, startDate?: Date, endDat
   }
 }
 
-export async function getExpensesByBankAccountId(bankAccountId: string, userId: ObjectId): Promise<Expense[]> {
-  try {
-    const client = await clientPromise
-    const db = client.db("finance-tracker")
-
-    const expenses = await db
-      .collection("expenses")
-      .find({
-        bankAccountId: new ObjectId(bankAccountId),
-        userId: new ObjectId(userId),
-      })
-      .sort({ date: -1 })
-      .toArray()
-
-    return expenses as Expense[]
-  } catch (error) {
-    console.error("Error fetching expenses by bank account:", error)
-    throw error
-  }
+/**
+ * Fallback stub – bank-account features were removed in v27.
+ * This exists only so legacy imports compile during the transition.
+ * If it’s ever called, it will simply return an empty array.
+ */
+export async function getExpensesByBankAccountId(): Promise<never[]> {
+  return []
 }

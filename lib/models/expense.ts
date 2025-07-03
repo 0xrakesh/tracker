@@ -8,7 +8,6 @@ export interface Expense {
   category: string
   description: string
   date: Date
-  bankAccountId?: ObjectId
   createdAt?: Date
 }
 
@@ -55,11 +54,6 @@ const expenseSchema = new mongoose.Schema(
       type: Date,
       required: true,
       default: Date.now,
-    },
-    bankAccountId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "BankAccount",
-      required: false,
     },
   },
   {
