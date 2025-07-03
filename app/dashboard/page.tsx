@@ -16,24 +16,15 @@ import { useLoans } from "@/hooks/use-loans"
 import { LoanList } from "@/components/loan-list"
 import Link from "next/link"
 import { BarChart3 } from "lucide-react"
-import { BudgetOverview } from "@/components/budget-overview"
+import { BudgetOverview } from "@/components/budget-overview" // Re-add BudgetOverview for viewing
 
 export default function Dashboard() {
   const { user, isLoading: authLoading } = useAuth()
-  const [mounted, setMounted] = useState(false)
-  const [startDate, setStartDate] = useState<Date>()
-  const [endDate, setEndDate] = useState<Date>()
+  const [startDate, setStartDate] = useState(startOfMonth(new Date()))
+  const [endDate, setEndDate] = useState(endOfMonth(new Date()))
+  const { expenses, loading, error, deleteExpense } = useExpenses(startDate, endDate) // Removed addExpense
+  const { loans, loading: loansLoading, error: loansError, deleteLoan, addLoanPayment } = useLoans() // Removed addLoan
   const router = useRouter()
-
-  useEffect(() => {
-    setMounted(true)
-    const now = new Date()
-    setStartDate(startOfMonth(now))
-    setEndDate(endOfMonth(now))
-  }, [])
-
-  const { expenses, loading, error, deleteExpense } = useExpenses(startDate, endDate)
-  const { loans, loading: loansLoading, error: loansError, deleteLoan, addLoanPayment } = useLoans()
 
   const handleDateChange = (newStartDate: Date, newEndDate: Date) => {
     setStartDate(newStartDate)
@@ -46,7 +37,7 @@ export default function Dashboard() {
     }
   }, [authLoading, user, router])
 
-  if (!mounted || authLoading) {
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Card className="p-8">
@@ -90,9 +81,7 @@ export default function Dashboard() {
                 <CardDescription>Your latest spending records</CardDescription>
               </CardHeader>
               <CardContent>
-                {startDate && endDate && (
-                  <DateRangePicker startDate={startDate} endDate={endDate} onDateChange={handleDateChange} />
-                )}
+                <DateRangePicker startDate={startDate} endDate={endDate} onDateChange={handleDateChange} />
                 {loading ? (
                   <div className="text-center py-8 text-muted-foreground">Loading expenses...</div>
                 ) : error ? (
@@ -135,7 +124,7 @@ export default function Dashboard() {
                 <CardDescription className="text-sm">Set and track your spending limits</CardDescription>
               </CardHeader>
               <CardContent className="p-4">
-                <BudgetOverview />
+                <BudgetOverview /> {/* Now directly showing the overview */}
               </CardContent>
             </Card>
           </div>
