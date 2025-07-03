@@ -1,14 +1,13 @@
 "use client"
 
-import { User, LogOut, BarChart3, Eye, EyeOff, Menu, PlusCircle, Wallet, PiggyBank, ReceiptText } from "lucide-react" // Import new icons
+import { User, LogOut, BarChart3, Eye, EyeOff, Menu, ReceiptText, Wallet, PiggyBank, Landmark } from "lucide-react"
 import Link from "next/link"
 import { useRouter, usePathname } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import { useVisibility } from "@/lib/visibility-context"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "./theme-toggle"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet" // Import Sheet components
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu" // Import DropdownMenu components
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
 export function Header() {
   const { user, logout } = useAuth()
@@ -79,12 +78,18 @@ export function Header() {
                           Add Loan
                         </Button>
                       </Link>
+                      <Link href="/dashboard/bank-accounts/create">
+                        <Button variant="ghost" className="w-full justify-start">
+                          <Landmark className="h-4 w-4 mr-2" />
+                          Add Bank Account
+                        </Button>
+                      </Link>
                     </nav>
                   </SheetContent>
                 </Sheet>
               </div>
 
-              {/* Desktop Navigation (Direct Links + Dropdown for Add) */}
+              {/* Desktop Navigation (Direct Links Only) */}
               <nav className="hidden md:flex items-center gap-2">
                 <Link href="/dashboard">
                   <Button variant={pathname === "/dashboard" ? "default" : "ghost"} size="sm">
@@ -97,34 +102,38 @@ export function Header() {
                     Insights
                   </Button>
                 </Link>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm">
-                      <PlusCircle className="h-4 w-4 mr-2" />
-                      Add New
+
+                {/* Direct Add Buttons */}
+                <div className="flex items-center gap-1 ml-2 pl-2 border-l">
+                  <Link href="/dashboard/expenses/create">
+                    <Button variant="outline" size="sm">
+                      <ReceiptText className="h-4 w-4 mr-2" />
+                      <span className="hidden lg:inline">Add Expense</span>
+                      <span className="lg:hidden">Expense</span>
                     </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem asChild>
-                      <Link href="/dashboard/expenses/create">
-                        <ReceiptText className="h-4 w-4 mr-2" />
-                        Add Expense
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/dashboard/budgets/create">
-                        <PiggyBank className="h-4 w-4 mr-2" />
-                        Add Budget
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/dashboard/loans/create">
-                        <Wallet className="h-4 w-4 mr-2" />
-                        Add Loan
-                      </Link>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                  </Link>
+                  <Link href="/dashboard/budgets/create">
+                    <Button variant="outline" size="sm">
+                      <PiggyBank className="h-4 w-4 mr-2" />
+                      <span className="hidden lg:inline">Add Budget</span>
+                      <span className="lg:hidden">Budget</span>
+                    </Button>
+                  </Link>
+                  <Link href="/dashboard/loans/create">
+                    <Button variant="outline" size="sm">
+                      <Wallet className="h-4 w-4 mr-2" />
+                      <span className="hidden lg:inline">Add Loan</span>
+                      <span className="lg:hidden">Loan</span>
+                    </Button>
+                  </Link>
+                  <Link href="/dashboard/bank-accounts/create">
+                    <Button variant="outline" size="sm">
+                      <Landmark className="h-4 w-4 mr-2" />
+                      <span className="hidden xl:inline">Add Account</span>
+                      <span className="xl:hidden">Account</span>
+                    </Button>
+                  </Link>
+                </div>
               </nav>
             </>
           )}
