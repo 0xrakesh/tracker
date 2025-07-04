@@ -89,7 +89,7 @@ export function LoanForm({ onSubmit }: LoanFormProps) {
   const term = watch("loanTermMonths")
 
   useEffect(() => {
-    const numPrincipal = Number.parseFloat(principal)
+    const numPrincipal = Number.parseFloat(initialOutstandingAmount) ?? Number.parseFloat(principal)
     const numRate = Number.parseFloat(rate)
     const numTerm = Number.parseInt(term)
 
@@ -99,7 +99,7 @@ export function LoanForm({ onSubmit }: LoanFormProps) {
     } else {
       setMonthlyPayment(null)
     }
-  }, [principal, rate, term])
+  }, [initialOutstandingAmount, principal, rate, term])
 
   const handleSubmit = async (values: FormValues) => {
     setIsSubmitting(true)
